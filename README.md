@@ -49,3 +49,9 @@ URL scheme.
 	1. /browser/:path/index (if :path ends with "/", it will be ignored)
 
 * / - will be mapped to /browse/
+
+### Get started
+
+To get Git Blogger running, clone the repository, and run `./gradlew run` to
+bootstrap the server. You should be able to find the HTTP server running at
+localhost:4567 after Gradle sets everything up.
