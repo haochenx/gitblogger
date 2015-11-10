@@ -48,8 +48,6 @@ URL scheme.
 	1. /view/:path.md
 	1. /browser/:path/index (if :path ends with "/", it will be ignored)
 
-* / - will be mapped to /browse/
-
 ### Get started
 
 To get Git Blogger running, clone the repository, and run `./gradlew run` to
