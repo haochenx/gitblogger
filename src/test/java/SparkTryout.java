@@ -1,4 +1,4 @@
-package name.haochenxie.gitblogger;
+
 
 import static spark.Spark.*;
 
