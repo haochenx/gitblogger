@@ -4,9 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
-
-import com.google.common.base.Objects;
 
 import spark.Request;
 import spark.Response;
@@ -53,7 +52,7 @@ public class URIPathDispatcherChain implements URIPathDispatcher {
                 URIPathDispatcherChain chain = context.getURIPathDispatcherChain();
                 String transformedPath = uriPathTransformer.apply(path);
 
-                if (Objects.equal(path, transformedPath)) {
+                if (Objects.equals(path, transformedPath)) {
                     throw new IllegalArgumentException("the transformer is not doing any transformation: "
                             + uriPathTransformer.getClass());
                 }
