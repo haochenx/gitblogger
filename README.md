@@ -27,18 +27,25 @@ Useful thing evolves to be great gradually, usually starting negligibly. As so
 Git Blogger starts with its very simple first attempt.
 
 The first attempt is built on the [Spark Framework](http://sparkjava.com), with
-Gradle as the build system, and support markdown (.md) and HTML (.html) for page
-sources.
+Gradle as the build system, and support markdown (.md, will be processed with
+[pegdown](https://github.com/sirthias/pegdown)) and HTML (.html) for page
+sources. The first attempt doesn't have any git related feature specified yet.
+it will just serve files from the current working directory, with the following
+URL scheme.
 
 ### URL scheme
-
-* /view/:path - will be mapped to a rendered version of :path, relative to the
-  root of the repository.
 
 * /raw/:path - will be mapped to the raw contents of :path, relative to the root
   of the repository.
 
-* /browse/:path - will try forwarding to /view/:path.html, /view/:path.md,
-  /view/:path, /view/:path/index.html, /view/:path/index.md
+* /view/:path - will be mapped to a rendered version of :path, relative to the
+  root of the repository.
+
+* /browse/:path - will try forwarding to (in the exact order):
+
+    1. /view/:path
+	1. /view/:path.html
+	1. /view/:path.md
+	1. /browser/:path/index (if :path ends with "/", it will be ignored)
 
 * / - will be mapped to /browse/
