@@ -1,5 +1,8 @@
-package name.haochenxie.gitblogger;
+package name.haochenxie.gitblogger.framework.dispatcher.util;
 
+import name.haochenxie.gitblogger.framework.dispatcher.DispatcherContext;
+import name.haochenxie.gitblogger.framework.dispatcher.NamespacePathDispatcher;
+import name.haochenxie.gitblogger.framework.dispatcher.URIPathDispatcher;
 import spark.Request;
 import spark.Response;
 

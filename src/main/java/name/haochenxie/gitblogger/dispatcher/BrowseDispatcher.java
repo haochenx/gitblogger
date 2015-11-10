@@ -1,9 +1,12 @@
-package name.haochenxie.gitblogger;
+package name.haochenxie.gitblogger.dispatcher;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import name.haochenxie.gitblogger.framework.dispatcher.DispatcherContext;
+import name.haochenxie.gitblogger.framework.dispatcher.NamespacePathDispatcher;
+import name.haochenxie.gitblogger.framework.dispatcher.URIPathDispatcherChain;
 import spark.Request;
 import spark.Response;
 

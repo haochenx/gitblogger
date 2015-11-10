@@ -1,4 +1,4 @@
-package name.haochenxie.gitblogger;
+package name.haochenxie.gitblogger.framework.dispatcher;
 
 import spark.Request;
 import spark.Response;

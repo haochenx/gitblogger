@@ -1,4 +1,4 @@
-package name.haochenxie.gitblogger;
+package name.haochenxie.gitblogger.framework.dispatcher;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
+import name.haochenxie.gitblogger.framework.dispatcher.util.LocationURIPathDispatcher;
 import spark.Request;
 import spark.Response;
 

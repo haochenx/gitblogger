@@ -1,10 +1,12 @@
-package name.haochenxie.gitblogger;
+package name.haochenxie.gitblogger.framework.dispatcher.util;
 
 import static org.junit.Assert.*;
 
 import java.util.function.Function;
 
 import org.junit.Test;
+
+import name.haochenxie.gitblogger.framework.dispatcher.util.LocationURIPathDispatcher;
 
 public class LocationURIPathDispatcherTest {
 
