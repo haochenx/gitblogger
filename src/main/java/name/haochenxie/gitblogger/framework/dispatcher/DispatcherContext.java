@@ -4,35 +4,42 @@ import name.haochenxie.gitblogger.GitBloggerContext;
 import name.haochenxie.gitblogger.framework.mime.MimeParser;
 import name.haochenxie.gitblogger.framework.renderer.ContentRendererRegisty;
 
-public class DispatcherContext {
+public interface DispatcherContext {
 
-    private URIPathDispatcherChain uriPathDispatcherChain;
-    private MimeParser mimeParser;
-    private ContentRendererRegisty contentRendererRegistry;
-    private GitBloggerContext bloggerContext;
+    public NamespacedPathDispatcher getRootDispatcher();
 
-    public DispatcherContext(URIPathDispatcherChain uriPathDispatcherChain, MimeParser mimeParser,
+    public MimeParser getMimeParser();
+
+    public ContentRendererRegisty getContentRendererRegistry();
+
+    public GitBloggerContext getBloggerContext();
+
+    public static DispatcherContext create(NamespacedPathDispatcher rootDispatcher, MimeParser mimeParser,
             ContentRendererRegisty contentRendererRegistry, GitBloggerContext bloggerContext) {
-        this.uriPathDispatcherChain = uriPathDispatcherChain;
-        this.mimeParser = mimeParser;
-        this.contentRendererRegistry = contentRendererRegistry;
-        this.bloggerContext = bloggerContext;
+        return new DispatcherContext() {
+
+            @Override
+            public NamespacedPathDispatcher getRootDispatcher() {
+                return rootDispatcher;
+            }
+
+            @Override
+            public MimeParser getMimeParser() {
+                return mimeParser;
+            }
+
+            @Override
+            public ContentRendererRegisty getContentRendererRegistry() {
+                return contentRendererRegistry;
+            }
+
+            @Override
+            public GitBloggerContext getBloggerContext() {
+                return bloggerContext;
+            }
+
+        };
     }
 
-    public URIPathDispatcherChain getURIPathDispatcherChain() {
-        return uriPathDispatcherChain;
-    }
-
-    public MimeParser getMimeParser() {
-        return mimeParser;
-    }
-
-    public ContentRendererRegisty getContentRendererRegistry() {
-        return contentRendererRegistry;
-    }
-
-    public GitBloggerContext getBloggerContext() {
-        return bloggerContext;
-    }
 
 }

@@ -1,48 +1,43 @@
 package name.haochenxie.gitblogger.dispatcher;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
-
-import name.haochenxie.gitblogger.framework.dispatcher.DispatcherContext;
-import name.haochenxie.gitblogger.framework.dispatcher.NamespacePathDispatcher;
+import name.haochenxie.gitblogger.framework.ResourcePathDispatcher;
+import name.haochenxie.gitblogger.framework.ResourceRepository;
+import name.haochenxie.gitblogger.framework.dispatcher.ResourceDispatcherContext;
 import name.haochenxie.gitblogger.framework.renderer.ContentRendererRegisty;
 import spark.Request;
 import spark.Response;
 
-/**
- * the {@link NamespacePathDispatcher} that processes /view/* URI's
- */
-public class ViewDispatcher implements NamespacePathDispatcher {
+public class ViewDispatcher implements ResourcePathDispatcher {
 
     @Override
-    public Object dispatchNamespacePath(String reqpath, Request req, Response resp, DispatcherContext context)
-            throws Exception {
-        try {
-            File root = context.getBloggerContext().getRoot();
-            File reqfile = new File(root, reqpath);
+    public Object dispatchResourcePath(String rpath, Request req, Response resp,
+            ResourceDispatcherContext context) throws Exception {
+        ResourceRepository repo = context.getResourceRepository();
+        String[] respath = repo.canonizePath(rpath);
 
-            String mime = context.getMimeParser().parseMime(reqfile.getName());
+        if (repo.checkExistence(respath) && repo.checkIfResource(respath)) {
+            String basename = ResourceRepository.Helper.getBasename(respath);
+            String mime = context.getMimeParser().parseMime(basename);
+            InputStream input = repo.open(respath);
+
             ContentRendererRegisty registry = context.getContentRendererRegistry();
 
             if (registry.isSourceMimeTypeSupported(mime)) {
-                BufferedInputStream input = new BufferedInputStream(new FileInputStream(reqfile));
-                try (ByteOutputStream buff = new ByteOutputStream()) {
+                try (ByteArrayOutputStream buff = new ByteArrayOutputStream()) {
                     String outputMime = registry.render(mime, input, buff, context.getBloggerContext());
                     resp.type(outputMime);
-                    return buff.getBytes();
+                    return buff.toByteArray();
                 }
             } else {
-                return context.getURIPathDispatcherChain().dispatchURIPath(
-                        "/raw/" + reqpath, req, resp, context);
+                return context.getCurrentNamespaceDispatcher()
+                        .dispatchPath("/raw/" + rpath, req, resp, context);
             }
-        } catch (FileNotFoundException ex) {
+        } else {
             return null;
         }
-
     }
 
 }

@@ -1,33 +1,28 @@
 package name.haochenxie.gitblogger.dispatcher;
 
 import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 
-import name.haochenxie.gitblogger.framework.dispatcher.DispatcherContext;
-import name.haochenxie.gitblogger.framework.dispatcher.NamespacePathDispatcher;
+import name.haochenxie.gitblogger.framework.ResourcePathDispatcher;
+import name.haochenxie.gitblogger.framework.ResourceRepository;
+import name.haochenxie.gitblogger.framework.dispatcher.ResourceDispatcherContext;
 import spark.Request;
 import spark.Response;
 
-/**
- * the {@link NamespacePathDispatcher} that processes /raw/* URI's
- */
-public class RawDispatcher implements NamespacePathDispatcher {
+public class RawDispatcher implements ResourcePathDispatcher {
 
     @Override
-    public Object dispatchNamespacePath(String reqpath, Request req, Response resp, DispatcherContext context)
-            throws Exception {
-        try {
-            File root = context.getBloggerContext().getRoot();
-            File reqfile = new File(root, reqpath);
-
-            BufferedInputStream input = new BufferedInputStream(new FileInputStream(reqfile));
-            String mime = context.getMimeParser().parseMime(reqfile.getName());
+    public Object dispatchResourcePath(String rpath, Request req, Response resp,
+            ResourceDispatcherContext context) throws Exception {
+        ResourceRepository repo = context.getResourceRepository();
+        String[] respath = repo.canonizePath(rpath);
+        if (repo.checkExistence(respath) && repo.checkIfResource(respath)) {
+            String basename = ResourceRepository.Helper.getBasename(respath);
+            String mime = context.getMimeParser().parseMime(basename);
 
             resp.type(mime);
+            BufferedInputStream input = new BufferedInputStream(repo.open(respath));
             return input;
-        } catch (FileNotFoundException ex) {
+        } else {
             return null;
         }
     }

@@ -4,36 +4,37 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import name.haochenxie.gitblogger.framework.dispatcher.DispatcherContext;
-import name.haochenxie.gitblogger.framework.dispatcher.NamespacePathDispatcher;
-import name.haochenxie.gitblogger.framework.dispatcher.URIPathDispatcherChain;
+import name.haochenxie.gitblogger.framework.ResourcePathDispatcher;
+import name.haochenxie.gitblogger.framework.dispatcher.NamespacedDispatcherChainBuilder;
+import name.haochenxie.gitblogger.framework.dispatcher.NamespacedPathDispatcherChain;
+import name.haochenxie.gitblogger.framework.dispatcher.ResourceDispatcherContext;
 import spark.Request;
 import spark.Response;
 
-public class BrowseDispatcher implements NamespacePathDispatcher {
+public class BrowseDispatcher implements ResourcePathDispatcher {
 
     Map<Request, AtomicInteger> magicCounterMap = new ConcurrentHashMap<>();
 
     @Override
-    public Object dispatchNamespacePath(String reqpath, Request req, Response resp, DispatcherContext context)
-            throws Exception {
+    public Object dispatchResourcePath(String rpath, Request req, Response resp,
+            ResourceDispatcherContext context) throws Exception {
         magicCounterMap.putIfAbsent(req, new AtomicInteger(0));
 
-        URIPathDispatcherChain chain = new URIPathDispatcherChain.Builder()
-                .addForwardDispatcher(path -> String.format("/view/%s", reqpath))
-                .addForwardDispatcher(path -> String.format("/view/%s.html", reqpath))
-                .addForwardDispatcher(path -> String.format("/view/%s.md", reqpath))
+        NamespacedPathDispatcherChain chain = new NamespacedDispatcherChainBuilder()
+                .addForwardDispatcher(path -> String.format("/view/%s", rpath))
+                .addForwardDispatcher(path -> String.format("/view/%s.html", rpath))
+                .addForwardDispatcher(path -> String.format("/view/%s.md", rpath))
                 .addForwardDispatcher(path -> {
                     if (magicCounterMap.get(req).getAndIncrement() > 0) {
                         // we don't want a infinite loop
-                        return String.format("/view/%s", reqpath);
+                        return String.format("/view/%s", rpath);
                     } else {
-                        return String.format("/browse/%s/index", reqpath);
+                        return String.format("/browse/%s/index", rpath);
                     }
                 })
                 .build();
 
-        return chain.dispatchURIPath(reqpath, req, resp, context);
+        return chain.dispatchPath(rpath, req, resp, context);
     }
 
 }

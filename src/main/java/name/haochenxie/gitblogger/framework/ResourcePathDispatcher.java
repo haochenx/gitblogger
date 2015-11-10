@@ -1,9 +1,10 @@
-package name.haochenxie.gitblogger.framework.dispatcher;
+package name.haochenxie.gitblogger.framework;
 
+import name.haochenxie.gitblogger.framework.dispatcher.ResourceDispatcherContext;
 import spark.Request;
 import spark.Response;
 
-public interface NamespacePathDispatcher {
+public interface ResourcePathDispatcher {
 
     /**
     *
@@ -16,7 +17,7 @@ public interface NamespacePathDispatcher {
     *             considered as dispatched and the framework will handle the
     *             exception but there will be no further normal dispatching
     */
-    public Object dispatchNamespacePath(String reqpath, Request req, Response resp, DispatcherContext context)
-            throws Exception;
+    public Object dispatchResourcePath(String rpath, Request req, Response resp,
+            ResourceDispatcherContext context) throws Exception;
 
 }
