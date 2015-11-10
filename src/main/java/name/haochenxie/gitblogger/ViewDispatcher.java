@@ -1,8 +1,8 @@
 package name.haochenxie.gitblogger;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.util.List;
 import java.util.Map;
 
@@ -41,7 +41,7 @@ public class ViewDispatcher implements NamespacePathDispatcher {
             File root = GitBloggerContext.INSTANCE.getRoot();
             File reqfile = new File(root, reqpath);
             String ext = FilenameUtils.getExtension(reqpath);
-            String contents = IOUtils.toString(new FileReader(reqfile));
+            String contents = IOUtils.toString(new FileInputStream(reqfile));
 
             switch (ext) {
             case "html":

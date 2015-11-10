@@ -1,7 +1,7 @@
 package name.haochenxie.gitblogger;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 
 import org.apache.commons.io.IOUtils;
 
@@ -19,7 +19,7 @@ public class RawDispatcher implements NamespacePathDispatcher {
         File root = GitBloggerContext.INSTANCE.getRoot();
         File reqfile = new File(root, reqpath);
 
-        String contents = IOUtils.toString(new FileReader(reqfile));
+        String contents = IOUtils.toString(new FileInputStream(reqfile));
 
         resp.type("text/plain");
         return contents;
