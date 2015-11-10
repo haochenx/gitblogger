@@ -27,7 +27,8 @@ Useful thing evolves to be great gradually, usually starting negligibly. As so
 Git Blogger starts with its very simple first attempt.
 
 The first attempt is built on the [Spark Framework](http://sparkjava.com), with
-Gradle as the build system, and support markdown for page sources.
+Gradle as the build system, and support markdown (.md) and HTML (.html) for page
+sources.
 
 ### URL scheme
 
@@ -37,7 +38,7 @@ Gradle as the build system, and support markdown for page sources.
 * /raw/:path - will be mapped to the raw contents of :path, relative to the root
   of the repository.
 
-* /browse/:path - will try forwarding to /view/:path, /view/:path/index.html,
-  /view/:path/index.md
+* /browse/:path - will try forwarding to /view/:path.html, /view/:path.md,
+  /view/:path, /view/:path/index.html, /view/:path/index.md
 
 * / - will be mapped to /browse/
