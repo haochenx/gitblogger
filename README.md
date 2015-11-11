@@ -42,7 +42,7 @@ repository if existing at `$(pwd)/.git`, with the following URL scheme.
 * /index/:reqpath - the (supposed to be) blog site served with the files in
   the git index
 
-* /refs/:ref\::reqpath - the (supposed to be) blog site served with the files on
+* /refs/:ref/:reqpath - the (supposed to be) blog site served with the files on
   the head of :ref, which is a git ref, e.g. heads/master
 
 * /commit/:objectid/:reqpath - the (supposed to be) blog site served with the
