@@ -30,6 +30,7 @@ public class NamespacedDispatcherChainBuilder {
                         "the transformer is not doing any transformation: " + uriPathTransformer.getClass());
             }
 
+            System.out.println(String.format("forwording: %s -> %s", path, transformedPath));
             return redispatcher.dispatchPath(transformedPath, req, resp, context);
         };
 

@@ -12,6 +12,8 @@ public class LocationPathDispatcher implements NamespacedPathDispatcher {
 
     private NamespacedPathDispatcher innerDispatcher;
 
+    private NamespacedPathDispatcher newNamespaceDispatcher;
+
     public LocationPathDispatcher(String location, NamespacedPathDispatcher innerDispatcher) {
         this.location = Helper.decorate(location);
         this.innerDispatcher = innerDispatcher;
@@ -20,12 +22,21 @@ public class LocationPathDispatcher implements NamespacedPathDispatcher {
     @Override
     public Object dispatchPath(String path, Request req, Response resp, NamespacedDispatcherContext context)
             throws Exception {
+        path = Helper.decorate(path);
+
+        if (newNamespaceDispatcher != null) {
+            context = NamespacedDispatcherContext.create(context, newNamespaceDispatcher);
+        }
         if (path.startsWith(location)) {
             String restpath = path.substring(location.length());
             return innerDispatcher.dispatchPath(restpath, req, resp, context);
         } else {
             return null;
         }
+    }
+
+    public void setNewNamespaceDispatcher(NamespacedPathDispatcher d) {
+        this.newNamespaceDispatcher = d;
     }
 
     public static class Helper {

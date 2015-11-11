@@ -15,6 +15,8 @@ public class ViewDispatcher implements ResourcePathDispatcher {
     @Override
     public Object dispatchResourcePath(String rpath, Request req, Response resp,
             ResourceDispatcherContext context) throws Exception {
+        System.out.print(String.format("view: %s (%s) .. ", rpath, req.pathInfo()));
+
         ResourceRepository repo = context.getResourceRepository();
         String[] respath = repo.canonizePath(rpath);
 
@@ -29,13 +31,16 @@ public class ViewDispatcher implements ResourcePathDispatcher {
                 try (ByteArrayOutputStream buff = new ByteArrayOutputStream()) {
                     String outputMime = registry.render(mime, input, buff, context.getBloggerContext());
                     resp.type(outputMime);
+                    System.out.println("handled");
                     return buff.toByteArray();
                 }
             } else {
+                System.out.println("relay to /raw");
                 return context.getCurrentNamespaceDispatcher()
                         .dispatchPath("/raw/" + rpath, req, resp, context);
             }
         } else {
+            System.out.println("not found");
             return null;
         }
     }

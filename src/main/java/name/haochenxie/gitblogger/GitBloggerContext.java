@@ -1,8 +1,13 @@
 package name.haochenxie.gitblogger;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+
+import org.eclipse.jgit.internal.storage.file.FileRepository;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 public class GitBloggerContext {
 
@@ -32,6 +37,14 @@ public class GitBloggerContext {
 
     public Charset getDefaultOutputEncoding() {
         return defaultOutputEncoding;
+    }
+
+    public Repository openGitRepoOnRoot() throws IOException {
+        Repository gitrepo = new FileRepositoryBuilder().setMustExist(true).setWorkTree(getRoot())
+                .setGitDir(new File(getRoot(), ".git")).build();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> { gitrepo.close(); }));
+        return gitrepo;
     }
 
 }
