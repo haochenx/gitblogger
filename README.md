@@ -36,9 +36,9 @@ repository if existing at `$(pwd)/.git`, with the following URL scheme.
 
 Git Blogger will have 2 modes, the Development Mode (dev-mode) and Production
 Mode (prod-mode). In dev-mode, all toplevel namespaces (/worktree, /index,
-/object etc) will be enabled and the /expose namespace will be mapped to
-/index for easy testing. But in production mode, only the contents /expose is
-exposed at /, the URL root.
+/object etc) will be enabled and the /exposed namespace will be mapped to
+/index/browse for easy testing. But in production mode, only the contents that
+would be served under /exposed is exposed at /, the URL root.
 
 ### Toplevel URL scheme
 
@@ -59,10 +59,10 @@ exposed at /, the URL root.
 * /tree/:objectid/:reqpath - the (supposed to be) blog site served with the
   files on the git tree object :objectid
 
-* /expose/:reqpath - configurable nameplace, which will be mapped accordingly to
-  configuration (configuration mechanism not yet though). it will be mapped to
-  /index/:reqpath in development mode, and to /refs/heads/master in production
-  mode by default.
+* /exposed/:reqpath - configurable nameplace, which will be mapped accordingly
+  to configuration (configuration mechanism not yet though). it will be mapped
+  to /index/browse/:reqpath in Development Mode, and to
+  /refs/heads/master/browse/:reqpath in Production Mode by default.
 
 * /object/:objectid?as=:mime - the content of the git object, served with the
   content type :mime. if the "as" parameter is missing, "text/plain" will be
@@ -88,3 +88,60 @@ exposed at /, the URL root.
 To get Git Blogger running, clone the repository, and run `./gradlew run` to
 bootstrap the server. You should be able to find the HTTP server running at
 localhost:4567 after Gradle sets everything up.
+
+### Configurations
+
+You can configure Git Blogger passing it JVM properties. For example, if you're
+using Gradle to bootstrap the server, the following command
+
+	./gradlew -Dgitblogger.listeningPort=8080 -Dgitblogger.production run
+
+will set `gitblogger.listeningPort` to `8080`, and enable the
+`gitblogger.production` flag, which cause Git Blogger to run in production mode
+at the port 0.0.0.0.
+
+Here's a list of the properties you can used to configure the behavior of Git
+Blogger:
+
+* `gitblogger.rootRepo`
+
+    use this property to specify the git repository dir of which contents Git
+    Blogger should server. it is defaulted to `$(pwd)`
+
+* `gitblogger.bareRootRepo`
+
+	use this property to specify the git repository dir of which contents Git
+	Blogger should server. using this property also make Git Blogger treat the
+	repository as bare. note that this property will surpass
+	`gitblogger.rootRepo`.
+
+* `gitblogger.rootExposedRef`
+
+    this property specify which ref should Git Blogger server in the production
+    mode. if not specified, it is defaulted to `refs/master/master` (i.e. the
+    master branch)
+
+* `gitblogger.production`
+
+    use this flag to tell Git Blogger to run in Production Mode. if this flag is
+    absent, Git Blogger will run in Development Mode. note that this is a flag
+    that its presence is significant, so setting its value to "false" will not
+    turn it off (i.e. if you want Git Blogger to be run in Development Mode,
+    don't pass this property at all).
+
+* `gitblogger.listeningIp`
+
+	use this property to specify on which IP address Git Blogger should be
+	listening on. it is defaulted to `0.0.0.0`
+
+* `gitblogger.listeningPort`
+
+	use this property to specify on which TCP port Git Blogger should be listening
+	on. it is defaulted to `4567`
+
+* `gitblogger.canonicalUrl`
+
+	use this property to specify the default URL for Git Blogger to be accessed
+	through. it will be used to generate links that can be referred from outside
+	the blog, and it will be used to derive the URL root location Git Blogger
+	should use to serve its contents. it is defaulted to nothing.

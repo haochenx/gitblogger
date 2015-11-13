@@ -1,10 +1,15 @@
 package name.haochenxie.gitblogger;
 
 import static name.haochenxie.gitblogger.framework.util.UriUtils.canonizePath;
+import static name.haochenxie.gitblogger.framework.util.UriUtils.checkHead;
+import static name.haochenxie.gitblogger.framework.util.UriUtils.combine;
+import static name.haochenxie.gitblogger.framework.util.UriUtils.drop;
 import static name.haochenxie.gitblogger.framework.util.UriUtils.of;
+import static name.haochenxie.gitblogger.framework.util.UriUtils.dropHead;
 import static name.haochenxie.gitblogger.framework.util.UriUtils.stringify;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +20,9 @@ import org.eclipse.jgit.lib.Repository;
 
 import com.google.common.base.Joiner;
 
+import name.haochenxie.gitblogger.config.BaseConfig;
+import name.haochenxie.gitblogger.config.FSGitRepoConfig;
+import name.haochenxie.gitblogger.config.GitBloggerConfiguration;
 import name.haochenxie.gitblogger.dispatcher.BrowseDispatcher;
 import name.haochenxie.gitblogger.dispatcher.ObjectDispatcher;
 import name.haochenxie.gitblogger.dispatcher.RawDispatcher;
@@ -22,12 +30,16 @@ import name.haochenxie.gitblogger.dispatcher.ViewDispatcher;
 import name.haochenxie.gitblogger.framework.ResourceRepository;
 import name.haochenxie.gitblogger.framework.dispatcher.DispatcherContext;
 import name.haochenxie.gitblogger.framework.dispatcher.NamespacedDispatcher;
+import name.haochenxie.gitblogger.framework.dispatcher.NamespacedDispatcherBuilder.ChainNamespacedDispatcherBuilder;
+import name.haochenxie.gitblogger.framework.dispatcher.NamespacedDispatcherBuilder.ChainNamespacedDispatcherBuilder.ChainNamespacedDispacher;
 import name.haochenxie.gitblogger.framework.dispatcher.NamespacedDispatcherContext;
 import name.haochenxie.gitblogger.framework.dispatcher.ResourceDispatcher;
 import name.haochenxie.gitblogger.framework.renderer.ContentRendererRegisty;
 import name.haochenxie.gitblogger.framework.repo.FileSystemResourceRepository;
 import name.haochenxie.gitblogger.framework.repo.GitIndexResourceRepository;
 import name.haochenxie.gitblogger.framework.repo.GitTreeResourceRepository;
+import name.haochenxie.gitblogger.framework.util.GitUtils;
+import name.haochenxie.gitblogger.framework.util.SuperOptional;
 import name.haochenxie.gitblogger.mime.SimpleMimeParser;
 import name.haochenxie.gitblogger.renderer.MarkdownRenderer;
 import spark.Spark;
@@ -36,51 +48,79 @@ public class GitBlogger {
 
     public static void main(String[] args) throws Exception {
         GitBloggerContext bloggerContext = GitBloggerContext.createDefault();
-        NamespacedDispatcher rootDispatcher = createRootDispatcher(bloggerContext);
+
+        logConfig(bloggerContext.getConfig());
+
+        BaseConfig bconfig = bloggerContext.getConfig().getBaseConfig();
+
+        String rootUrl = SuperOptional.from(bconfig.getCanonicalUrl())
+                .failableMap(url -> new URI(url).getPath()).orElse("");
+        String[] rootNamespace = canonizePath(rootUrl);
+        String sparkListenerPath = "/" + stringify(combine(rootNamespace, "*"));
+
+        NamespacedDispatcher rootDispatcher = bconfig.isProductionMode()
+                ? createProductionRootDispatcher(bloggerContext)
+                : createDevelopmentRootDispatcher(bloggerContext);
+
         ContentRendererRegisty rendererRegistry = new ContentRendererRegisty()
                 .register(new MarkdownRenderer());
         SimpleMimeParser mimeParser = new SimpleMimeParser();
 
         DispatcherContext baseContext =
                 DispatcherContext.create(rootDispatcher, mimeParser, rendererRegistry, bloggerContext);
-        NamespacedDispatcherContext dispatcherContext = NamespacedDispatcherContext.create(baseContext, of("/"),
+        NamespacedDispatcherContext dispatcherContext = NamespacedDispatcherContext.create(baseContext, rootNamespace,
                 rootDispatcher);
 
-        Spark.port(4568);
+        Spark.ipAddress(bconfig.getListeningIp());
+        Spark.port(bconfig.getListeningPort());
 
-        Spark.get("/*", (req, resp) -> {
+        System.out.println("Spark Listening Path: " + sparkListenerPath);
+
+        Spark.get(sparkListenerPath, (req, resp) -> {
             String spath = req.pathInfo();
-            String[] path = canonizePath(spath);
+            String[] path = dropHead(canonizePath(spath), rootNamespace);
 
             return rootDispatcher.dispatch(path, req, resp, dispatcherContext);
         });
     }
 
-    private static NamespacedDispatcher createRootDispatcher(GitBloggerContext bloggerContext) throws IOException {
+    private static void logConfig(GitBloggerConfiguration config) {
+        BaseConfig base = config.getBaseConfig();
+        System.out.println(String.format(
+                "Git Blogger started in %s mode", base.isProductionMode() ? "PRODUCTION" : "DEVELOPMENT"));
+        System.out.println(String.format(
+                "Default Source/Output Encoding: %s/%s",
+                base.getDefaultSourceEncoding(), base.getDefaultOutputEncoding()));
+        System.out.println(String.format(
+                "Listening on %s:%d", base.getListeningIp(), base.getListeningPort()));
+        System.out.println(String.format(
+                "Canonical URL = %s",
+                base.getCanonicalUrl().orElse("UNCONFIGURED")));
+
+        FSGitRepoConfig root = config.getRootRepoConfig();
+        System.out.println(String.format(
+                "Root repository bare? %s", root.isBare()));
+        System.out.println(String.format(
+                "    .... Git Dir     = %s", root.getGitDir().getAbsolutePath()));
+        System.out.println(String.format(
+                "    .... Working Dir = %s", root.getWorkingDir().map(f -> f.getAbsolutePath()).orElse("UNCONFIGURED")));
+        System.out.println(String.format(
+                "    .... Index File  = %s", root.getIndexFile().map(f -> f.getAbsolutePath()).orElse("UNCONFIGURED")));
+        System.out.println(String.format(
+                "    .... Exposed Ref = %s", root.getProductionExposedRef()));
+    }
+
+    private static NamespacedDispatcher createDevelopmentRootDispatcher(GitBloggerContext bloggerContext)
+            throws IOException {
         ResourceDispatcher rawDispatcher = new RawDispatcher();
         ResourceDispatcher viewDispatcher = new ViewDispatcher();
         ResourceDispatcher browseDispatcher = new BrowseDispatcher();
 
-        ResourceRepository wtrepo = new FileSystemResourceRepository(bloggerContext.getRoot());
-        Repository gitrepo = bloggerContext.openGitRepoOnRoot();
-        GitIndexResourceRepository idxrepo = new GitIndexResourceRepository(DirCache.read(gitrepo),
-                gitrepo.newObjectReader());
+        FSGitRepoConfig rootRepoConfig = bloggerContext.getConfig().getRootRepoConfig();
+        Repository gitrepo = GitUtils.openGitRepository(rootRepoConfig);
 
-        NamespacedDispatcher rootDispatcher = NamespacedDispatcher.createBuilder()
-            .subNamespace("worktree")
-                .withResourceRepository(wtrepo)
-                    .dispatchLocation("raw", rawDispatcher)
-                    .dispatchLocation("view", viewDispatcher)
-                    .dispatchLocation("browse", browseDispatcher)
-                    .finish()
-                .finish()
-            .subNamespace("index")
-                .withResourceRepository(idxrepo)
-                    .dispatchLocation("raw", rawDispatcher)
-                    .dispatchLocation("view", viewDispatcher)
-                    .dispatchLocation("browse", browseDispatcher)
-                    .finish()
-                .finish()
+        ChainNamespacedDispatcherBuilder<ChainNamespacedDispatcherBuilder<?>> rootDispatcherBuilder =
+                NamespacedDispatcher.createBuilder()
             .subNamespace("refs")
                 .dynamicSubNamespace(path -> parseRef(path, gitrepo))
                     .withResourceRepository(context -> createRefResourceRepository(context, gitrepo))
@@ -111,8 +151,62 @@ public class GitBlogger {
             .subNamespace("object")
                 .chain(new ObjectDispatcher(gitrepo))
                 .finish()
-            .forwardNamespace("expose", "index")
+            .chainForwarding(path
+                    -> checkHead(path, of("exposed")) ? combine(of("index", "browse"), drop(path, 1)) : null);
+
+        if (! rootRepoConfig.isBare()) {
+            ResourceRepository wtrepo = new FileSystemResourceRepository(rootRepoConfig.getWorkingDir().get());
+            ResourceRepository idxrepo = new GitIndexResourceRepository(DirCache.read(gitrepo),
+                    gitrepo.newObjectReader());
+
+            rootDispatcherBuilder
+                .subNamespace("worktree")
+                    .withResourceRepository(wtrepo)
+                        .dispatchLocation("raw", rawDispatcher)
+                        .dispatchLocation("view", viewDispatcher)
+                        .dispatchLocation("browse", browseDispatcher)
+                        .finish()
+                    .finish()
+                .subNamespace("index")
+                    .withResourceRepository(idxrepo)
+                        .dispatchLocation("raw", rawDispatcher)
+                        .dispatchLocation("view", viewDispatcher)
+                        .dispatchLocation("browse", browseDispatcher)
+                        .finish()
+                    .finish();
+        }
+
+        ChainNamespacedDispacher rootDispatcher = rootDispatcherBuilder.buildFinal();
+        return rootDispatcher;
+    }
+
+    private static NamespacedDispatcher createProductionRootDispatcher(GitBloggerContext bloggerContext)
+            throws IOException {
+        ResourceDispatcher rawDispatcher = new RawDispatcher();
+        ResourceDispatcher viewDispatcher = new ViewDispatcher();
+        ResourceDispatcher browseDispatcher = new BrowseDispatcher();
+
+        FSGitRepoConfig rootRepoConfig = bloggerContext.getConfig().getRootRepoConfig();
+        Repository gitrepo = GitUtils.openGitRepository(rootRepoConfig);
+        String exposedRef = rootRepoConfig.getProductionExposedRef();
+
+        GitTreeResourceRepository repo = GitTreeResourceRepository.forRef(gitrepo, exposedRef);
+
+        ChainNamespacedDispacher phantomDispatcher =
+                NamespacedDispatcher.createBuilder()
+            .withResourceRepository(repo)
+                .dispatchLocation("raw", rawDispatcher)
+                .dispatchLocation("view", viewDispatcher)
+                .dispatchLocation("browse", browseDispatcher)
+                .finish()
             .buildFinal();
+
+        NamespacedDispatcher rootDispatcher = (path, req, resp, context) -> {
+            String[] phantomPath = combine("browse", path);
+            NamespacedDispatcherContext phantomContext = NamespacedDispatcherContext.create(
+                    context.getParentContext(), of(), phantomDispatcher);
+            return phantomDispatcher.dispatch(phantomPath, req, resp, phantomContext);
+        };
 
         return rootDispatcher;
     }

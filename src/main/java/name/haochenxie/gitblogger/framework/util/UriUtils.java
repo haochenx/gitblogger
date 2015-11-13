@@ -2,8 +2,10 @@ package name.haochenxie.gitblogger.framework.util;
 
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.base.Joiner;
@@ -18,6 +20,11 @@ public class UriUtils {
 
     public static String[] combine(String[] part1, String part2) {
         return ObjectArrays.concat(part1, canonizePath(part2), String.class);
+    }
+
+    public static String[] combine(String[]... parts) {
+        List<String> list = Stream.of(parts).flatMap(part -> Stream.of(part)).collect(Collectors.toList());
+        return list.toArray(new String[list.size()]);
     }
 
     public static String[] transformName(String[] parts, Function<String, String> transformer) {
@@ -47,6 +54,11 @@ public class UriUtils {
 
     public static String[] drop(String[] parts, int n) {
         return Arrays.copyOfRange(parts, n, parts.length);
+    }
+
+    public static String[] dropHead(String[] parts, String... head) {
+        Preconditions.checkArgument(checkHead(parts, head));
+        return drop(parts, head.length);
     }
 
     public static String[] canonizePath(String path) {

@@ -23,6 +23,7 @@ import com.google.common.base.Suppliers;
 
 import name.haochenxie.gitblogger.GitBloggerContext;
 import name.haochenxie.gitblogger.RendererException;
+import name.haochenxie.gitblogger.config.BaseConfig;
 import name.haochenxie.gitblogger.framework.renderer.ContentRenderer;
 
 public class MarkdownRenderer implements ContentRenderer {
@@ -51,8 +52,9 @@ public class MarkdownRenderer implements ContentRenderer {
                 "source of MIME type %s is not supported", sourceMime);
 
         try {
-            Charset srcEncoding = context.getDefaultSourceEncoding();
-            Charset outEncoding = context.getDefaultOutputEncoding();
+            BaseConfig baseConfig = context.getConfig().getBaseConfig();
+            Charset srcEncoding = baseConfig.getDefaultSourceEncoding();
+            Charset outEncoding = baseConfig.getDefaultOutputEncoding();
             String source = IOUtils.toString(is, srcEncoding);
 
             try (Writer wr = new OutputStreamWriter(os, outEncoding)) {

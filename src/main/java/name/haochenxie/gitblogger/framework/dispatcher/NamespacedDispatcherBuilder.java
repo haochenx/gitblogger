@@ -6,6 +6,7 @@ import static name.haochenxie.gitblogger.framework.util.UriUtils.drop;
 import static name.haochenxie.gitblogger.framework.util.UriUtils.tail;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -71,6 +72,15 @@ public interface NamespacedDispatcherBuilder<B0 extends NamespacedDispatcherBuil
         public ResourceChainNamespacedDispatcherBuilder<B>
         dispatchLocation(String location, ResourceDispatcher dispatcher) {
             return (ResourceChainNamespacedDispatcherBuilder<B>) super.dispatchLocation(location,
+                    (path, req, resp, baseContext) -> {
+                        ResourceDispatcherContext resContext = ResourceDispatcherContext.create(baseContext,
+                                repoSupplier.apply(baseContext));
+                        return dispatcher.dispatch(path, req, resp, resContext);
+            });
+        }
+
+        public ResourceChainNamespacedDispatcherBuilder<B> chain(ResourceDispatcher dispatcher) {
+            return (ResourceChainNamespacedDispatcherBuilder<B>) super.chain(
                     (path, req, resp, baseContext) -> {
                         ResourceDispatcherContext resContext = ResourceDispatcherContext.create(baseContext,
                                 repoSupplier.apply(baseContext));
@@ -235,8 +245,12 @@ public interface NamespacedDispatcherBuilder<B0 extends NamespacedDispatcherBuil
         public ChainNamespacedDispatcherBuilder<B> chainForwarding(
                 Function<String[], String[]> transformer) {
             return chain((path, req, resp, context) -> {
-               String[] tranformed = transformer.apply(path);
-               return context.getCurrentNamespaceDispatcher().dispatch(tranformed, req, resp, context);
+               String[] transformed = transformer.apply(path);
+               if (transformed != null && ! Arrays.equals(transformed, path)) {
+                   return context.getCurrentNamespaceDispatcher().dispatch(transformed, req, resp, context);
+               } else {
+                   return null;
+               }
             });
         }
 
