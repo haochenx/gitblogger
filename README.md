@@ -32,6 +32,14 @@ Gradle as the build system, and support markdown (.md, will be processed with
 sources. it will serve files from the current working directory as well the git
 repository if existing at `$(pwd)/.git`, with the following URL scheme.
 
+### Development mode and Production mode
+
+Git Blogger will have 2 modes, the Development Mode (dev-mode) and Production
+Mode (prod-mode). In dev-mode, all toplevel namespaces (/worktree, /index,
+/object etc) will be enabled and the /expose namespace will be mapped to
+/index for easy testing. But in production mode, only the contents /expose is
+exposed at /, the URL root.
+
 ### Toplevel URL scheme
 
 * /_ah/:path - ah, these are the internal pages (acronym of Administration Home)
@@ -50,6 +58,11 @@ repository if existing at `$(pwd)/.git`, with the following URL scheme.
 
 * /tree/:objectid/:reqpath - the (supposed to be) blog site served with the
   files on the git tree object :objectid
+
+* /expose/:reqpath - configurable nameplace, which will be mapped accordingly to
+  configuration (configuration mechanism not yet though). it will be mapped to
+  /index/:reqpath in development mode, and to /refs/heads/master in production
+  mode by default.
 
 * /object/:objectid?as=:mime - the content of the git object, served with the
   content type :mime. if the "as" parameter is missing, "text/plain" will be
