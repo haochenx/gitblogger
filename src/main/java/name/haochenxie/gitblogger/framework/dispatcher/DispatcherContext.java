@@ -6,7 +6,7 @@ import name.haochenxie.gitblogger.framework.renderer.ContentRendererRegisty;
 
 public interface DispatcherContext {
 
-    public NamespacedPathDispatcher getRootDispatcher();
+    public NamespacedDispatcher getRootDispatcher();
 
     public MimeParser getMimeParser();
 
@@ -14,12 +14,12 @@ public interface DispatcherContext {
 
     public GitBloggerContext getBloggerContext();
 
-    public static DispatcherContext create(NamespacedPathDispatcher rootDispatcher, MimeParser mimeParser,
+    public static DispatcherContext create(NamespacedDispatcher rootDispatcher, MimeParser mimeParser,
             ContentRendererRegisty contentRendererRegistry, GitBloggerContext bloggerContext) {
         return new DispatcherContext() {
 
             @Override
-            public NamespacedPathDispatcher getRootDispatcher() {
+            public NamespacedDispatcher getRootDispatcher() {
                 return rootDispatcher;
             }
 

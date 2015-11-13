@@ -18,12 +18,12 @@ public interface ResourceDispatcherContext extends NamespacedDispatcherContext {
             }
 
             @Override
-            public NamespacedPathDispatcher getRootDispatcher() {
+            public NamespacedDispatcher getRootDispatcher() {
                 return base.getRootDispatcher();
             }
 
             @Override
-            public NamespacedPathDispatcher getCurrentNamespaceDispatcher() {
+            public NamespacedDispatcher getCurrentNamespaceDispatcher() {
                 return base.getCurrentNamespaceDispatcher();
             }
 
@@ -40,6 +40,16 @@ public interface ResourceDispatcherContext extends NamespacedDispatcherContext {
             @Override
             public GitBloggerContext getBloggerContext() {
                 return base.getBloggerContext();
+            }
+
+            @Override
+            public NamespacedDispatcherContext getParentContext() {
+                return base.getParentContext();
+            }
+
+            @Override
+            public String[] getCurrentNamespace() {
+                return base.getCurrentNamespace();
             }
 
         };

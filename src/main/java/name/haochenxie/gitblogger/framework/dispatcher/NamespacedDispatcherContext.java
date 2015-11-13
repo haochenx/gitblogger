@@ -6,18 +6,21 @@ import name.haochenxie.gitblogger.framework.renderer.ContentRendererRegisty;
 
 public interface NamespacedDispatcherContext extends DispatcherContext {
 
-    public NamespacedPathDispatcher getCurrentNamespaceDispatcher();
+    public NamespacedDispatcher getCurrentNamespaceDispatcher();
 
-    public static NamespacedDispatcherContext create(DispatcherContext base,
-            NamespacedPathDispatcher currentNamespaceDispatcher) {
+    public NamespacedDispatcherContext getParentContext();
+
+    public String[] getCurrentNamespace();
+
+    public static NamespacedDispatcherContext create(DispatcherContext base, String[] namespace,
+            NamespacedDispatcher currentNamespaceDispatcher) {
         return new NamespacedDispatcherContext() {
 
             @Override
-            public NamespacedPathDispatcher getRootDispatcher() {
+            public NamespacedDispatcher getRootDispatcher() {
                 return base.getRootDispatcher();
             }
 
-            @Override
             public MimeParser getMimeParser() {
                 return base.getMimeParser();
             }
@@ -33,8 +36,22 @@ public interface NamespacedDispatcherContext extends DispatcherContext {
             }
 
             @Override
-            public NamespacedPathDispatcher getCurrentNamespaceDispatcher() {
+            public NamespacedDispatcher getCurrentNamespaceDispatcher() {
                 return currentNamespaceDispatcher;
+            }
+
+            @Override
+            public NamespacedDispatcherContext getParentContext() {
+                if (base instanceof NamespacedDispatcherContext) {
+                    return (NamespacedDispatcherContext) base;
+                } else {
+                    return this;
+                }
+            }
+
+            @Override
+            public String[] getCurrentNamespace() {
+                return namespace;
             }
         };
     }

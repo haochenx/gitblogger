@@ -73,17 +73,4 @@ public class GitIndexResourceRepository implements ResourceRepository {
         throw new UnsupportedOperationException("not implemented yet");
     }
 
-    public static void main(String[] args) throws Exception {
-        File root = new File(".");
-
-        try (FileRepository gitrepo = new FileRepository(
-                new FileRepositoryBuilder().setWorkTree(root).setGitDir(new File(root, ".git")).setup())) {
-            DirCache index = DirCache.read(gitrepo);
-            GitIndexResourceRepository repo = new GitIndexResourceRepository(index, gitrepo.newObjectReader());
-
-            IOUtils.copy(repo.open(repo.canonizePath("README.md")), System.out);
-        }
-
-    }
-
 }

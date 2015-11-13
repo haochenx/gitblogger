@@ -3,9 +3,6 @@ package name.haochenxie.gitblogger.framework;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.NoSuchElementException;
-import java.util.stream.Stream;
 
 public interface ResourceRepository {
 
@@ -26,29 +23,6 @@ public interface ResourceRepository {
     }
 
     public TreeListing createTreeListing(String[] treePath) throws IOException;
-
-    /**
-     * TODO doc, test
-     *
-     * @throws NoSuchElementException if {@code path} is like "../somewhere"
-     */
-    public default String[] canonizePath(String path) {
-        LinkedList<String> parts = Stream.of(path.split("/"))
-            .filter(part -> part.length() > 0)
-            .filter(part -> ! part.equals("."))
-            .reduce(new LinkedList<String>(),
-                    (list, part) -> {
-                        if (part.equals("..")) {
-                            list.removeLast();
-                        } else {
-                            list.add(part);
-                        }
-                        return list;
-                    },
-                    ($, $$) -> { $.addAll($$); return $; });
-
-        return parts.toArray(new String[parts.size()]);
-    }
 
     public static class Helper {
 

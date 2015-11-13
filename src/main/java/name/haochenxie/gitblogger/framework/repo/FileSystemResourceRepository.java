@@ -89,11 +89,4 @@ public class FileSystemResourceRepository implements ResourceRepository {
         return new File(root, path);
     }
 
-    public static void main(String[] args) throws Exception {
-        File root = new File(".");
-        FileSystemResourceRepository repo = new FileSystemResourceRepository(root);
-        TreeListing listing = repo.createTreeListing(repo.canonizePath("/git"));
-        System.out.println(listing.listChildrenTrees());
-    }
-
 }
