@@ -31,11 +31,13 @@ public class GitIndexResourceRepository implements ResourceRepository {
 
     @Override
     public boolean checkExistence(String[] path) throws IOException {
+        ensureUpdated();
         return checkIfResource(path) || checkIfTree(path);
     }
 
     @Override
     public InputStream open(String[] rpath) throws IOException {
+        ensureUpdated();
         String path = Joiner.on('/').join(rpath);
         DirCacheEntry entry = Optional.ofNullable(index.getEntry(path)).orElseThrow(() -> new FileNotFoundException());
         return objectReader.open(entry.getObjectId()).openStream();
@@ -43,11 +45,13 @@ public class GitIndexResourceRepository implements ResourceRepository {
 
     @Override
     public boolean checkIfTree(String[] path) throws IOException {
+        ensureUpdated();
         DirCacheTree tree = index.getCacheTree(true);
         return checkIfTree(path, 0, tree);
     }
 
-    private boolean checkIfTree(String[] rpath, int k, DirCacheTree tree) {
+    private boolean checkIfTree(String[] rpath, int k, DirCacheTree tree) throws IOException {
+        ensureUpdated();
         if (k >= rpath.length) {
             return true;
         } else {
@@ -64,13 +68,21 @@ public class GitIndexResourceRepository implements ResourceRepository {
 
     @Override
     public boolean checkIfResource(String[] rpath) throws IOException {
+        ensureUpdated();
         String path = Joiner.on('/').join(rpath);
         return ! (index.findEntry(path) < 0);
     }
 
     @Override
     public TreeListing createTreeListing(String[] treePath) throws IOException {
+        ensureUpdated();
         throw new UnsupportedOperationException("not implemented yet");
+    }
+
+    private void ensureUpdated() throws IOException {
+        if (index.isOutdated()) {
+            index.read();
+        }
     }
 
 }
