@@ -57,6 +57,10 @@ public class GitTreeResourceRepository implements ResourceRepository {
     public boolean checkExistence(String[] rpath) throws IOException {
         ensureUpdated();
         try (TreeWalk walk = new TreeWalk(objectReader)) {
+            if (rpath.length == 0) {
+                return true;
+            }
+
             walk.setRecursive(true);
             walk.addTree(root);
             String path = Joiner.on('/').join(rpath);
@@ -95,6 +99,10 @@ public class GitTreeResourceRepository implements ResourceRepository {
     public boolean checkIfTree(String[] rpath) throws IOException {
         ensureUpdated();
         try (TreeWalk walk = new TreeWalk(objectReader)) {
+            if (rpath.length == 0) {
+                return true;
+            }
+
             walk.setRecursive(true);
             walk.addTree(root);
             String path = Joiner.on('/').join(rpath);
@@ -114,6 +122,10 @@ public class GitTreeResourceRepository implements ResourceRepository {
     public boolean checkIfResource(String[] rpath) throws IOException {
         ensureUpdated();
         try (TreeWalk walk = new TreeWalk(objectReader)) {
+            if (rpath.length == 0) {
+                return false;
+            }
+
             walk.setRecursive(true);
             walk.addTree(root);
             String path = Joiner.on('/').join(rpath);
