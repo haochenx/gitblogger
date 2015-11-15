@@ -35,6 +35,14 @@ public class UriUtils {
         return copy;
     }
 
+    public static String[] transformNameModerately(String[] parts, Function<String, String> transformer) {
+        if (parts.length > 0) {
+            return transformName(parts, transformer);
+        } else {
+            return of(transformer.apply(""));
+        }
+    }
+
     public static boolean checkHead(String[] parts, String... head) {
         if (parts.length < head.length) {
             return false;

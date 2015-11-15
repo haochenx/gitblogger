@@ -1,7 +1,7 @@
 package name.haochenxie.gitblogger.dispatcher;
 
 import static name.haochenxie.gitblogger.framework.util.UriUtils.combine;
-import static name.haochenxie.gitblogger.framework.util.UriUtils.transformName;
+import static name.haochenxie.gitblogger.framework.util.UriUtils.transformNameModerately;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,8 +24,8 @@ public class BrowseDispatcher implements ResourceDispatcher {
 
         NamespacedDispatcher chain = NamespacedDispatcher.createBuilder()
                 .chainForwarding(path -> combine("view", path))
-                .chainForwarding(path -> combine("view", transformName(path, name -> name + ".html")))
-                .chainForwarding(path -> combine("view", transformName(path, name -> name + ".md")))
+                .chainForwarding(path -> combine("view", transformNameModerately(path, name -> name + ".html")))
+                .chainForwarding(path -> combine("view", transformNameModerately(path, name -> name + ".md")))
                 .chainForwarding(path -> {
                     if (magicCounterMap.get(req).getAndIncrement() > 0) {
                         // we don't want a infinite loop
