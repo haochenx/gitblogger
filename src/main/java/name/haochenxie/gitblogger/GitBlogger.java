@@ -37,6 +37,7 @@ import name.haochenxie.gitblogger.framework.dispatcher.ResourceDispatcher;
 import name.haochenxie.gitblogger.framework.renderer.ContentRendererRegisty;
 import name.haochenxie.gitblogger.framework.repo.FileSystemResourceRepository;
 import name.haochenxie.gitblogger.framework.repo.GitIndexResourceRepository;
+import name.haochenxie.gitblogger.framework.repo.GitRefResourceRepository;
 import name.haochenxie.gitblogger.framework.repo.GitTreeResourceRepository;
 import name.haochenxie.gitblogger.framework.util.GitUtils;
 import name.haochenxie.gitblogger.framework.util.SuperOptional;
@@ -190,7 +191,7 @@ public class GitBlogger {
         Repository gitrepo = GitUtils.openGitRepository(rootRepoConfig);
         String exposedRef = rootRepoConfig.getProductionExposedRef();
 
-        GitTreeResourceRepository repo = GitTreeResourceRepository.forRef(gitrepo, exposedRef);
+        ResourceRepository repo = GitRefResourceRepository.forRef(gitrepo, exposedRef);
 
         ChainNamespacedDispacher phantomDispatcher =
                 NamespacedDispatcher.createBuilder()
@@ -223,7 +224,7 @@ public class GitBlogger {
             }
 
             GitTreeResourceRepository repo;
-            repo = GitTreeResourceRepository.forRef(gitrepo, ref);
+            repo = GitRefResourceRepository.forRef(gitrepo, ref);
             return repo;
         } catch (IOException e) {
             throw new RuntimeException(e);

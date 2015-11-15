@@ -25,24 +25,11 @@ public class GitTreeResourceRepository implements ResourceRepository {
 
     private RevTree root;
 
-    private ObjectReader objectReader;
+    protected ObjectReader objectReader;
 
     public GitTreeResourceRepository(RevTree root, ObjectReader objectReader) {
         this.root = root;
         this.objectReader = objectReader;
-    }
-
-    public static GitTreeResourceRepository forRef(Repository repo, String ref) throws IOException {
-        ObjectReader or = repo.newObjectReader();
-        ObjectId rev = repo.getRef(ref).getLeaf().getObjectId();
-
-        try (RevWalk walk = new RevWalk(or)) {
-            walk.setRetainBody(false);
-            RevCommit commit = walk.parseCommit(rev);
-            RevTree tree = commit.getTree();
-
-            return new GitTreeResourceRepository(tree, or);
-        }
     }
 
     public static GitTreeResourceRepository forTree(Repository repo, String treeId) throws IOException {
@@ -68,6 +55,7 @@ public class GitTreeResourceRepository implements ResourceRepository {
 
     @Override
     public boolean checkExistence(String[] rpath) throws IOException {
+        ensureUpdated();
         try (TreeWalk walk = new TreeWalk(objectReader)) {
             walk.setRecursive(true);
             walk.addTree(root);
@@ -86,6 +74,7 @@ public class GitTreeResourceRepository implements ResourceRepository {
 
     @Override
     public InputStream open(String[] rpath) throws IOException {
+        ensureUpdated();
         try (TreeWalk walk = new TreeWalk(objectReader)) {
             walk.setRecursive(true);
             walk.addTree(root);
@@ -104,6 +93,7 @@ public class GitTreeResourceRepository implements ResourceRepository {
 
     @Override
     public boolean checkIfTree(String[] rpath) throws IOException {
+        ensureUpdated();
         try (TreeWalk walk = new TreeWalk(objectReader)) {
             walk.setRecursive(true);
             walk.addTree(root);
@@ -122,6 +112,7 @@ public class GitTreeResourceRepository implements ResourceRepository {
 
     @Override
     public boolean checkIfResource(String[] rpath) throws IOException {
+        ensureUpdated();
         try (TreeWalk walk = new TreeWalk(objectReader)) {
             walk.setRecursive(true);
             walk.addTree(root);
@@ -148,6 +139,7 @@ public class GitTreeResourceRepository implements ResourceRepository {
             public Collection<String> listChildrenTrees() throws IOException {
                 List<String> list = new ArrayList<>();
 
+                ensureUpdated();
                 try (TreeWalk walk = new TreeWalk(objectReader)) {
                     walk.setRecursive(false);
                     walk.addTree(root);
@@ -170,6 +162,7 @@ public class GitTreeResourceRepository implements ResourceRepository {
             public Collection<String> listChidrenResources() throws IOException {
                 List<String> list = new ArrayList<>();
 
+                ensureUpdated();
                 try (TreeWalk walk = new TreeWalk(objectReader)) {
                     walk.setRecursive(false);
                     walk.addTree(root);
@@ -188,6 +181,18 @@ public class GitTreeResourceRepository implements ResourceRepository {
                 return list;
             }
         };
+    }
+
+    protected void ensureUpdated() throws IOException {
+        // no-op
+    }
+
+    protected RevTree getRootTree() {
+        return root;
+    }
+
+    protected void setRootTree(RevTree root) {
+        this.root = root;
     }
 
 }
