@@ -43,11 +43,11 @@ public class ContentRendererRegisty implements ContentRenderer {
             .filter(r -> r.isSourceMimeTypeSupported(sourceMime))
             .findAny();
 
-        String outputMime = renderer
+        String contentType = renderer
                 .orElseThrow(() -> new RendererException("No suitable renderer is registered for type: " + sourceMime))
                 .render(sourceMime, source, output, context);
 
-        return outputMime;
+        return contentType;
     }
 
 

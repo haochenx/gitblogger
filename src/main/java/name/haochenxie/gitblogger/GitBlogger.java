@@ -9,12 +9,17 @@ import static name.haochenxie.gitblogger.framework.util.UriUtils.dropHead;
 import static name.haochenxie.gitblogger.framework.util.UriUtils.stringify;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.lib.Repository;
 
@@ -81,8 +86,24 @@ public class GitBlogger {
             String spath = req.pathInfo();
             String[] path = dropHead(canonizePath(spath), rootNamespace);
 
-            return rootDispatcher.dispatch(path, req, resp, dispatcherContext);
+            Object result = rootDispatcher.dispatch(path, req, resp, dispatcherContext);
+
+            // Spark somehow instead of piping the content of InputStream, would
+            // convert the InputStream to String with the JVM default encoding,
+            // then serve the string in UTF-8, which is troublesome for our use case
+            if (result instanceof InputStream) {
+                // this is a hack to the Spark framework for custom serialization logic
+                HttpServletResponse rresp = resp.raw();
+                InputStream is = (InputStream) result;
+                try (ServletOutputStream os = rresp.getOutputStream()) {
+                    rresp.setStatus(200);
+                    IOUtils.copy(is, os);
+                }
+            }
+
+            return result;
         });
+
     }
 
     private static void logConfig(GitBloggerConfiguration config) {

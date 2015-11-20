@@ -30,8 +30,8 @@ public class ViewDispatcher implements ResourceDispatcher {
 
             if (registry.isSourceMimeTypeSupported(mime)) {
                 try (ByteArrayOutputStream buff = new ByteArrayOutputStream()) {
-                    String outputMime = registry.render(mime, input, buff, context.getBloggerContext());
-                    resp.type(outputMime);
+                    String contentType = registry.render(mime, input, buff, context.getBloggerContext());
+                    resp.type(contentType);
                     System.out.println("handled");
                     return buff.toByteArray();
                 }
