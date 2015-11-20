@@ -2,6 +2,8 @@ package name.haochenxie.gitblogger.config;
 
 import java.io.File;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public interface FSGitRepoConfig {
 
@@ -28,6 +30,35 @@ public interface FSGitRepoConfig {
             return forStandardGitDir(new File(rootRepo), exposedRef);
         } else {
             return forStandardGitDir(new File("."), exposedRef);
+        }
+    }
+
+    // TODO maybe we should create a dedicated exception type for configuration errors
+    // TODO probably catch the RepositoryNotFoundException
+    public static FSGitRepoConfig parseRepoConfig(String spec) throws IllegalArgumentException {
+        Pattern pattern = Pattern.compile("(?<path>[^@]+)(@(?<ref>.+))?");
+        Matcher m = pattern.matcher(spec);
+        if (m.matches()) {
+            String path = m.group("path");
+            String ref = m.group("ref");
+
+            File root = new File(path);
+            if (root.isDirectory()) {
+                // a naive criteria for a bare git directory, but it
+                // should be good enough for our use case
+                boolean bare = ! new File(root, ".git").isDirectory();
+                ref = ref != null ? ref : "refs/heads/master";
+
+                if (bare) {
+                    return forBareGitDir(root, ref);
+                } else {
+                    return forStandardGitDir(root, ref);
+                }
+            } else {
+                throw new IllegalArgumentException("repository path " + root + "dosen't refer to a directory");
+            }
+        } else {
+            throw new IllegalArgumentException("unable to parse path spec: " + spec);
         }
     }
 

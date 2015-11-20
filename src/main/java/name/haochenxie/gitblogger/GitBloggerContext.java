@@ -11,7 +11,7 @@ public class GitBloggerContext {
     }
 
     public static GitBloggerContext createDefault() {
-        return new GitBloggerContext(GitBloggerConfiguration.getCurrentConfig());
+        return new GitBloggerContext(GitBloggerConfiguration.parseConfig(System.getProperties()));
     }
 
     public GitBloggerConfiguration getConfig() {

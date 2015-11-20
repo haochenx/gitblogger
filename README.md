@@ -40,9 +40,12 @@ Mode (prod-mode). In dev-mode, all toplevel namespaces (/worktree, /index,
 /index/browse for easy testing. But in production mode, only the contents that
 would be served under /exposed is exposed at /, the URL root.
 
-### Toplevel URL scheme
+### Common Toplevel URL scheme
 
-* /_ah/:path - ah, these are the internal pages (acronym of Administration Home)
+* /_ah/:path - ah, these are the internal pages (acronym of Administration
+  Home), not implemented yet though
+
+### Development Toplevel URL scheme
 
 * /worktree/:reqpath - the (supposed to be) blog site served with the files in
   the working tree
@@ -67,6 +70,14 @@ would be served under /exposed is exposed at /, the URL root.
 * /object/:objectid?as=:mime - the content of the git object, served with the
   content type :mime. if the "as" parameter is missing, "text/plain" will be
   assumed.
+
+### Production Mode Toplevel URL scheme
+
+* /:repoid/:path, if :repoid exists, will be mapped (effectively) to /refs/<the
+  exposed ref of :repoid>/browse/:path under the :repoid's repo
+
+* /:path will be mapped (effectively, since any internal URL is not exposed
+  in Production Mode) to /refs/<gitblogger.rootExposedRef>/browse/:path
 
 ### :reqpath scheme
 
@@ -103,23 +114,26 @@ at the port 0.0.0.0.
 Here's a list of the properties you can used to configure the behavior of Git
 Blogger:
 
-* `gitblogger.rootRepo`
+* `gitblogger.root`
 
     use this property to specify the git repository dir of which contents Git
-    Blogger should server. it is defaulted to `$(pwd)`
+    Blogger should server. Git Blogger will try to detect whether it is a bare
+    repository or a normal repository. it is defaulted to `$(pwd)`. you can
+    also use the following format to specify which ref should be exposed when in
+    Production Mode:
 
-* `gitblogger.bareRootRepo`
+		/path/to/repo@exposing-ref
 
-	use this property to specify the git repository dir of which contents Git
-	Blogger should server. using this property also make Git Blogger treat the
-	repository as bare. note that this property will surpass
-	`gitblogger.rootRepo`.
+	note that this implies that you cannot have '@' in your repository path.
 
-* `gitblogger.rootExposedRef`
+* `gitblogger.repos`
 
-    this property specify which ref should Git Blogger server in the production
-    mode. if not specified, it is defaulted to `refs/master/master` (i.e. the
-    master branch)
+	use this properties to specify additional repositories that you want Git
+    Blogger to serve together with the root repository, in the following format:
+
+		a=repo_a_path@exposing-ref,b=repo_b_path@exposing-ref
+
+	make sure not to include any space around the '='s and ','s.
 
 * `gitblogger.production`
 
@@ -129,12 +143,12 @@ Blogger:
     turn it off (i.e. if you want Git Blogger to be run in Development Mode,
     don't pass this property at all).
 
-* `gitblogger.listeningIp`
+* `gitblogger.ip`
 
 	use this property to specify on which IP address Git Blogger should be
 	listening on. it is defaulted to `0.0.0.0`
 
-* `gitblogger.listeningPort`
+* `gitblogger.port`
 
 	use this property to specify on which TCP port Git Blogger should be listening
 	on. it is defaulted to `4567`
