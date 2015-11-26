@@ -29,6 +29,12 @@ run {
   systemProperties System.getProperties()
 }
 
+task lilacs(type:JavaExec) {
+  standardInput = System.in
+  main = 'name.haochenxie.gitblogger.lilacs.translator.LilacsJavascriptTranslator'
+  classpath = sourceSets.main.runtimeClasspath
+}
+
 generateGrammarSource {
   arguments += ["-visitor"]
 }

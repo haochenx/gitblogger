@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.apache.commons.io.IOUtils;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
@@ -209,7 +210,9 @@ public class LilacsJavascriptTranslator {
         return js;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        String in = IOUtils.toString(System.in).trim();
+        System.out.println(compile(in));
     }
 
 }
