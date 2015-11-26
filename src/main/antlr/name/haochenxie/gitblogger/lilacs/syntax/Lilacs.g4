@@ -1,7 +1,11 @@
 grammar Lilacs;
 
-NUM_INF   : 'Infinity' ;
-NUM_NAN   : 'NaN' ;
+@header {
+package name.haochenxie.gitblogger.lilacs.syntax;
+}
+
+NUM_INF   : ([+\-])? 'Infinity' ;
+NUM_NAN   : ([+\-])? 'NaN' ;
 
 C_UNDEFINED : '#undefined' ;
 C_NULL      : '#null' ;
@@ -21,13 +25,13 @@ KW_ARROW : '=>' ;
 KW_RAWSEQ_START : '::!';
 KW_RAWSEQ_ENDS : '\n!::';
 
-NUM_INT     : [+\-]? ([1-9] [0-9]* | '0') ;
+NUM_INT     : ([+\-])? ([1-9] [0-9]* | '0') ;
 NUM_DECIMAL : NUM_INT '.' NUM_INT? | '0'? '.' NUM_INT ;
 NUM_SCI     : (NUM_DECIMAL | NUM_INT) [eE] NUM_INT ;
 NUM_OCT     : '0' [0-9]+ ;
 NUM_HEX     : '0x' [0-9a-fA-F]+ ;
 
-RAWSEQ : KW_RAWSEQ_START .*? '\n' .*? KW_RAWSEQ_ENDS ;
+RAWSEQ : KW_RAWSEQ_START .*? '\n' .*? '\n' WP? KW_RAWSEQ_ENDS ;
 
 OP
     : '+' | '-' | '*' | '/' | '%' | '>' | '>=' | '<' | '<=' | '&&' | '||' | '&'
@@ -35,7 +39,7 @@ OP
     | '<-'
     ;
 
-ID  : [a-zA-Z$] [a-zA-Z$0-9\-:]* ;
+ID  : [a-zA-Z$_] [a-zA-Z$_0-9\-:]* ;
 TAG : ':' [a-zA-Z$] [a-zA-Z$0-9\-:]* ;
 WP  : [ \n\r\t]+ ;
 
@@ -93,8 +97,8 @@ ids
 
 ioexp
     : id
-    | xioexp '/' id
-    | ioexp '/' id
+    | headx=xioexp '/' id
+    | head=ioexp '/' id
     ;
 
 sexp : t_sexp | f_sexp ;
@@ -106,15 +110,15 @@ sexp_sf : sf_if | sf_exact | sf_new | sf_case | sf_aat | sf_with | sf_throw ;
 sexp_sugar : sugar_let | sugar_begin | sugar_for | sugar_forin | sugar_shat ;
 
 sf_if
-    : '(' WP? 'if' WP exp WP exp WP exp  WP? ')'
+    : '(' WP? 'if' WP cond=exp WP then=exp WP els=exp  WP? ')'
     ;
 
 sf_exact
-    : '(' WP? KW_EXACT WP ioexp WP? ')'
+    : '(' WP? KW_EXACT WP exp WP? ')'
     ;
 
 sf_new
-    : '(' WP? KW_NEW WP exp (WP exps)? WP? ')'
+    : '(' WP? KW_NEW WP cons=exp (WP exps)? WP? ')'
     ;
 
 sf_case
@@ -144,7 +148,7 @@ sf_throw
     ;
 
 sf_aat
-    : '(' WP? '@@' WP exp WP exp WP? ')'
+    : '(' WP? '@@' WP key=exp WP subj=exp WP? ')'
     ;
 
 sugar_shat
@@ -165,7 +169,7 @@ sugar_for
     ;
 
 sugar_forin
-    : '(' WP? KW_FORIN WP bind WP exps WP? ')'
+    : '(' WP? KW_FORIN WP '(' WP? keybind=id WP valbind=id WP obj=exp WP? ')' WP exps WP? ')'
     ;
 
 bind
@@ -185,22 +189,22 @@ sexp_invk
 constant : c_undefined | c_null | c_true | c_false ;
 
 f_sexp
-    : '(' WP? ids WP? KW_ARROW WP? exps WP? ')'
-    | '(' WP? '[' WP? id WP? ']' WP? ids WP? KW_ARROW WP? exps WP? ')'
+    : '(' WP? ids? WP? KW_ARROW WP? exps WP? ')'
+    | '(' WP? '[' WP? name=id WP? ']' WP? ids? WP? KW_ARROW WP? exps WP? ')'
     ;
 
 arr_cons
     : '[' WP? ']'
-    | '[' WP? exps  WP? ']'
+    | '[' WP? exps? WP? ']'
     ;
 
 obj_cons
     : '{' WP? '}'
-    | '{' WP? obj_cons_kvl WP? '}'
+    | '{' WP? obj_cons_kvl? WP? '}'
     ;
 
 obj_cons_kvl
-    : TAG WP exp
-    | TAG WP exp WP obj_cons_kvl
+    : tag0=TAG WP exp
+    | tag0=TAG WP exp WP obj_cons_kvl
     ;
 

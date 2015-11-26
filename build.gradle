@@ -29,6 +29,10 @@ run {
   systemProperties System.getProperties()
 }
 
+generateGrammarSource {
+  arguments += ["-visitor"]
+}
+
 // In this section you declare the dependencies for your production and test code
 dependencies {
     antlr 'org.antlr:antlr4:4.5.1-1'
@@ -38,6 +42,7 @@ dependencies {
     compile 'org.pegdown:pegdown:1.6.0'
     compile 'com.sparkjava:spark-core:2.3'
     compile 'commons-io:commons-io:2.4'
+    compile 'org.apache.commons:commons-lang3:3.4'
     compile 'com.google.guava:guava:18.0'
     compile 'org.eclipse.jgit:org.eclipse.jgit:4.1.0.201509280440-r'
 
@@ -46,6 +51,7 @@ dependencies {
     // testCompile dependency to testCompile 'org.testng:testng:6.8.1' and add
     // 'test.useTestNG()' to your build script.
     testCompile 'junit:junit:4.12'
+    testCompile 'org.hamcrest:hamcrest-junit:2.0.0.0'
 }
 
 // work around so that source jar are attached to dependencies in Eclipse
