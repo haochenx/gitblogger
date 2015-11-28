@@ -4,8 +4,8 @@ import static name.haochenxie.gitblogger.framework.util.UriUtils.canonizePath;
 import static name.haochenxie.gitblogger.framework.util.UriUtils.checkHead;
 import static name.haochenxie.gitblogger.framework.util.UriUtils.combine;
 import static name.haochenxie.gitblogger.framework.util.UriUtils.drop;
-import static name.haochenxie.gitblogger.framework.util.UriUtils.of;
 import static name.haochenxie.gitblogger.framework.util.UriUtils.dropHead;
+import static name.haochenxie.gitblogger.framework.util.UriUtils.of;
 import static name.haochenxie.gitblogger.framework.util.UriUtils.stringify;
 
 import java.io.IOException;
@@ -13,8 +13,10 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -119,17 +121,27 @@ public class GitBlogger {
                 "Canonical URL = %s",
                 base.getCanonicalUrl().orElse("UNCONFIGURED")));
 
+        BiConsumer<String, FSGitRepoConfig> describeRepoConfig =
+                (prefix, conf) -> {
+                    System.out.println(prefix + ": " + String.format(
+                            "[ref=%s bare=%s gitDir=%s index=%s workingDir=%s]",
+                            conf.getProductionExposedRef(),
+                            conf.isBare(),
+                            conf.getGitDir(),
+                            conf.getIndexFile(),
+                            conf.getWorkingDir()));
+                };
+
         FSGitRepoConfig root = config.getRootRepoConfig();
-        System.out.println(String.format(
-                "Root repository bare? %s", root.isBare()));
-        System.out.println(String.format(
-                "    .... Git Dir     = %s", root.getGitDir().getAbsolutePath()));
-        System.out.println(String.format(
-                "    .... Working Dir = %s", root.getWorkingDir().map(f -> f.getAbsolutePath()).orElse("UNCONFIGURED")));
-        System.out.println(String.format(
-                "    .... Index File  = %s", root.getIndexFile().map(f -> f.getAbsolutePath()).orElse("UNCONFIGURED")));
-        System.out.println(String.format(
-                "    .... Exposed Ref = %s", root.getProductionExposedRef()));
+        Map<String, FSGitRepoConfig> nonroots = config.getNonrootRepoConfigMap();
+
+        describeRepoConfig.accept("Root repository: ", root);
+
+        System.out.println(String.format("Nonroot repositories (count=%d):", nonroots.size()));
+        nonroots.entrySet().stream()
+        .forEach(e -> {
+            describeRepoConfig.accept("    .... " + e.getKey() + ": ", e.getValue());
+        });
     }
 
     private static NamespacedDispatcher createDevelopmentRootDispatcher(GitBloggerContext bloggerContext)
