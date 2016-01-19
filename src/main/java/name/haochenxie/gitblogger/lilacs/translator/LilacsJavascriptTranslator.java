@@ -91,10 +91,8 @@ public class LilacsJavascriptTranslator {
             switch (operants.size()) {
             case 1:
                 return String.format("%s%s", invkSexpOp.op().js, operants.get(0));
-            case 2:
-                return String.format("%s%s%s", operants.get(0), invkSexpOp.op().js, operants.get(1));
             default:
-                throw new ParsingError("Bad arity");
+                return Joiner.on(invkSexpOp.op().js).join(operants);
             }
         }
 
