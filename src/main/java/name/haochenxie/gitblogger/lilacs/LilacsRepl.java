@@ -1,17 +1,24 @@
 package name.haochenxie.gitblogger.lilacs;
 
 import name.haochenxie.gitblogger.lilacs.translator.LilacsJavascriptTranslator;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import java.io.File;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static name.haochenxie.gitblogger.utilities.FunctionalFacilities.wrapOptional;
 
 public class LilacsRepl {
 
+    private static final Function<String, String> lilacsCompiler = LilacsJavascriptTranslator::compile;
+
+    @SuppressWarnings("unused")
     public enum JavaScriptLibrary {
 
         UNDERSCORE("Underscore.js", "/javascript/underscore-min.1.8.3.js"),
@@ -19,11 +26,63 @@ public class LilacsRepl {
         ;
 
         public final String desc;
-        public final String resPath;
+        public final Supplier<Optional<String>> code;
 
         private JavaScriptLibrary(String desc, String resPath) {
+            this(desc, resPath, Function.identity());
+        }
+
+        private JavaScriptLibrary(String desc, String resPath, Function<String, String> converter) {
             this.desc = desc;
-            this.resPath = resPath;
+            this.code = () ->
+                    Optional.ofNullable(LilacsRepl.class.getResourceAsStream(resPath))
+                            .flatMap(wrapOptional(IOUtils::toString))
+                            .map(converter);
+        }
+
+    }
+
+    @SuppressWarnings("unused")
+    public static class API {
+
+        private ScriptEngine engine;
+
+        public API(ScriptEngine engine) {
+            this.engine = engine;
+        }
+
+        public boolean loadJavaScriptLibrary(String path) {
+            return loadLibrary(path, Function.identity());
+        }
+
+        public boolean loadLilacsLibrary(String path) {
+            return loadLibrary(path, lilacsCompiler);
+        }
+
+        public String compileLilacs(String lilacs) {
+            try {
+                return lilacsCompiler.apply(lilacs);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        private boolean loadLibrary(String path, Function<String, String> converter) {
+            final boolean[] loaded = {false};
+            Optional.of(new File(path))
+                    .flatMap(wrapOptional(FileUtils::readFileToString, System.err))
+                    .ifPresent(code -> {
+                        try {
+                            engine.eval(converter.apply(code));
+                            System.err.println("Library loaded: " + path);
+                            loaded[0] = true;
+                        } catch (ScriptException e) {
+                            System.err.println("Library loading failed: " + path);
+                            e.printStackTrace();
+                        }
+                    });
+            return loaded[0];
         }
 
     }
@@ -32,9 +91,11 @@ public class LilacsRepl {
         ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
         ScriptEngine engine = scriptEngineManager.getEngineByName("JavaScript");
 
+        API api = new API(engine);
+        engine.put("api", api);
+
         for (JavaScriptLibrary lib : JavaScriptLibrary.values()) {
-            Optional.ofNullable(LilacsRepl.class.getResourceAsStream(lib.resPath))
-                    .flatMap(wrapOptional(IOUtils::toString))
+            lib.code.get()
                     .ifPresent(libCode -> {
                         try {
                             engine.eval(libCode);
