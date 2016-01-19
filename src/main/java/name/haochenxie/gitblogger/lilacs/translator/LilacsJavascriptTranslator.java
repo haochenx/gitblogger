@@ -2,10 +2,7 @@ package name.haochenxie.gitblogger.lilacs.translator;
 
 import static java.util.stream.Collectors.toList;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -201,11 +198,17 @@ public class LilacsJavascriptTranslator {
     }
 
     public static String compile(String lilacsSourceCode) {
-        ExpContext exp = parse(lilacsSourceCode).exp();
         Visitors visitors = new Visitors();
-        Exp ast = exp.accept(visitors.expVisitor);
-        String js = ast.accept(new TranslatorVisitor());
-        return js;
+        ArrayList<String> lines = new ArrayList<>();
+
+        Deque<Exp> exps = parse(lilacsSourceCode).program().exps().accept(visitors.expsVisitor);
+
+        for (Exp exp : exps) {
+            String js = exp.accept(new TranslatorVisitor());
+            lines.add(js);
+        }
+
+        return Joiner.on("\n").join(lines);
     }
 
     public static void main(String[] args) throws Exception {

@@ -41,7 +41,9 @@ OP
 
 ID  : [a-zA-Z$_] [a-zA-Z$_0-9\-:]* ;
 TAG : ':' [a-zA-Z$] [a-zA-Z$0-9\-:]* ;
-WP  : [ \n\r\t]+ ;
+
+COMMENT : ';' .*? '\n' ;
+WP  : ([ \n\r\t] | COMMENT)+ ;
 
 LITSEQ : '\"' LITCHAR* '\"' ;
 LITCHAR : LITCHAR_XESP | LITCHAR_ESP ;
@@ -82,6 +84,10 @@ string : string_quoted | string_raw ;
 string_quoted : LITSEQ ;
 
 string_raw : RAWSEQ ;
+
+program
+    : WP? exps WP?
+    ;
 
 exps
     : exp

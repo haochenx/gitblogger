@@ -117,6 +117,7 @@ public class LilacsRepl {
                  line != null && !line.trim().isEmpty();
                  line = System.console().readLine()) {
                 buff.append(line);
+                buff.append('\n');
                 System.err.print(" : ");
             }
 
