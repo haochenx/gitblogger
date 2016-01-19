@@ -24,6 +24,7 @@ import com.google.common.base.Suppliers;
 import name.haochenxie.gitblogger.GitBloggerContext;
 import name.haochenxie.gitblogger.RendererException;
 import name.haochenxie.gitblogger.config.BaseConfig;
+import name.haochenxie.gitblogger.framework.mime.MimeUtils;
 import name.haochenxie.gitblogger.framework.renderer.ContentRenderer;
 
 public class MarkdownRenderer implements ContentRenderer {
@@ -63,7 +64,7 @@ public class MarkdownRenderer implements ContentRenderer {
                 wr.write(html);
             }
 
-            return "text/html";
+            return MimeUtils.constructContentType("text/html", outEncoding);
         } catch (IOException ex) {
             throw ex;
         } catch (Throwable ex) {

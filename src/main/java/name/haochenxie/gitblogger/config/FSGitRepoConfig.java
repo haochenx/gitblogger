@@ -5,6 +5,12 @@ import java.util.Optional;
 
 public interface FSGitRepoConfig {
 
+    public static String CONFKEY_ROOT_REPO_BARE = "gitblogger.bareRootRepo";
+    public static String CONFKEY_ROOT_REPO = "gitblogger.rootRepo";
+    public static String CONFKEY_EXPOSED_REF = "gitblogger.rootExposedRef";
+
+    public static String DEFAULT_EXPOSED_REF = "refs/heads/master";
+
     public boolean isBare();
 
     public File getGitDir();
@@ -18,9 +24,9 @@ public interface FSGitRepoConfig {
     }
 
     public static FSGitRepoConfig getCurrentRootRepoConfig() {
-        String bareRootRepo = System.getProperty("gitblogger.bareRootRepo");
-        String rootRepo = System.getProperty("gitblogger.rootRepo");
-        String exposedRef = System.getProperty("gitblogger.rootExposedRef", "refs/heads/master");
+        String bareRootRepo = System.getProperty(CONFKEY_ROOT_REPO_BARE);
+        String rootRepo = System.getProperty(CONFKEY_ROOT_REPO);
+        String exposedRef = System.getProperty(CONFKEY_EXPOSED_REF, DEFAULT_EXPOSED_REF);
 
         if (bareRootRepo != null) {
             return forBareGitDir(new File(bareRootRepo), exposedRef);

@@ -8,13 +8,20 @@ import static name.haochenxie.gitblogger.framework.util.UriUtils.of;
 import static name.haochenxie.gitblogger.framework.util.UriUtils.dropHead;
 import static name.haochenxie.gitblogger.framework.util.UriUtils.stringify;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+
+import com.google.common.collect.Sets;
+import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.lib.Repository;
 
@@ -45,11 +52,13 @@ import name.haochenxie.gitblogger.mime.SimpleMimeParser;
 import name.haochenxie.gitblogger.renderer.MarkdownRenderer;
 import spark.Spark;
 
+@SuppressWarnings({"Convert2MethodRef", "UnnecessaryLocalVariable", "UnusedParameters"})
 public class GitBlogger {
 
     public static void main(String[] args) throws Exception {
-        GitBloggerContext bloggerContext = GitBloggerContext.createDefault();
+        parseArguments(args);
 
+        GitBloggerContext bloggerContext = GitBloggerContext.createDefault();
         logConfig(bloggerContext.getConfig());
 
         BaseConfig bconfig = bloggerContext.getConfig().getBaseConfig();
@@ -81,8 +90,95 @@ public class GitBlogger {
             String spath = req.pathInfo();
             String[] path = dropHead(canonizePath(spath), rootNamespace);
 
-            return rootDispatcher.dispatch(path, req, resp, dispatcherContext);
+            Object result = rootDispatcher.dispatch(path, req, resp, dispatcherContext);
+
+            // Spark somehow instead of piping the content of InputStream, would
+            // convert the InputStream to String with the JVM default encoding,
+            // then serve the string in UTF-8, which is troublesome for our use case
+            if (result instanceof InputStream) {
+                // this is a hack to the Spark framework for custom serialization logic
+                HttpServletResponse rresp = resp.raw();
+                InputStream is = (InputStream) result;
+                try (ServletOutputStream os = rresp.getOutputStream()) {
+                    rresp.setStatus(200);
+                    IOUtils.copy(is, os);
+                }
+            }
+
+            return result;
         });
+
+    }
+
+    private static void parseArguments(String[] args) {
+        // flags: -development -production -bare
+        // configurable: -ip -port -url
+        // configurable: -repo -ref
+        // default configurable: -repo
+        // command: -help
+
+        System.err.println("To see available options, run GitBlogger with -help");
+
+        // productionMode : mutually exclusively controlled by -development and -production
+        boolean productionMode = false;
+
+        // bare : controlled by -bare
+        boolean bare = false;
+
+        // repo : configurable with identifier -repo
+        String repo = new File(".").getAbsolutePath();
+
+        String currentConfigurable = null;
+        Set<String> configurables = Sets.newHashSet("ip", "port", "url", "repo", "ref");
+
+        // allow "=" as a separator so that arguments like "-url=/blog" would be legal
+        args = Arrays.stream(args)
+                .flatMap(arg -> Arrays.stream(arg.split("=")))
+                .toArray(String[]::new);
+
+        for (String arg : args) {
+            if (arg.startsWith("-")) {
+                arg = arg.substring(1);
+                switch (arg) {
+                    case "development": productionMode = false; break;
+                    case "production":  productionMode = true;  break;
+                    case "bare":        bare = true;            break;
+
+                    case "help":
+                        System.err.println("GitBlogger https://github.com/haochenx/gitblogger");
+                        System.err.println("Usage: gitblogger [[-repo] <git repository>] [-bare] [-production|-development]");
+                        System.err.println("                  [-ip] [-port] [-url] [-ref <exposed ref>]");
+                        System.err.println("       gitblogger -help");
+                        System.exit(-1);
+
+                    default:
+                        if (configurables.contains(arg)) {
+                            currentConfigurable = arg;
+                        } else {
+                            System.err.println("Unknown argument: " + arg);
+                            System.exit(-1);
+                        }
+                }
+            } else {
+                currentConfigurable = currentConfigurable == null ? "repo" : currentConfigurable;
+                switch (currentConfigurable) {
+                    case "ip":   System.setProperty(BaseConfig.CONFKEY_LISTENING_IP, arg); break;
+                    case "port": System.setProperty(BaseConfig.CONFKEY_LISTENING_PORT, arg); break;
+                    case "url":  System.setProperty(BaseConfig.CONFKEY_CANONICAL_URL, arg); break;
+                    case "repo": repo = arg; break;
+                }
+
+                currentConfigurable = null;
+            }
+        }
+
+        System.setProperty(bare ? FSGitRepoConfig.CONFKEY_ROOT_REPO_BARE : FSGitRepoConfig.CONFKEY_ROOT_REPO,
+                repo);
+        if (productionMode) {
+            System.setProperty(BaseConfig.CONFKEY_PRODUCTION, "true");
+        } else {
+            System.clearProperty(BaseConfig.CONFKEY_PRODUCTION);
+        }
     }
 
     private static void logConfig(GitBloggerConfiguration config) {
