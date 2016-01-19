@@ -83,13 +83,35 @@ would be served under /exposed is exposed at /, the URL root.
 	1. /view/:path.md
 	1. /browser/:path/index (if :path ends with "/", it will be ignored)
 
-### Get started
+## Get started
+
+You can get GitBlogger running on your machine easily either with a release or
+with the source code. As GitBlogger is written in Java, you need to first ensure
+that Java Runtime Environment 8 (JRE 8) or higher is available on your system.
+Either way you use, you should be able to find the GitBlogger HTTP server
+serving at <http://localhost:4567> (with the default configuration) after
+starting up.
+
+### With a release
+
+After downloading and extracting a release zip file, you should have a
+`gitblogger/` directory. In the `gitblogger/bin/` sub-directory, there are
+executables for *nix and Windows systems.
+
+### With source code
 
 To get Git Blogger running, clone the repository, and run `./gradlew run` to
-bootstrap the server. You should be able to find the HTTP server running at
-localhost:4567 after Gradle sets everything up.
+bootstrap the server.
 
 ### Configurations
+
+#### Running with executables in a release
+
+You can pass "-help" to the executables to get a list of available options. For
+the meanings of the options, please refer to the *Running with gradle*
+subsection.
+
+#### Running with gradle
 
 You can configure Git Blogger passing it JVM properties. For example, if you're
 using Gradle to bootstrap the server, the following command

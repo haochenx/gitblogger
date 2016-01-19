@@ -6,6 +6,14 @@ import java.util.Optional;
 
 public interface BaseConfig {
 
+    public static String CONFKEY_PRODUCTION = "gitblogger.production";
+    public static String CONFKEY_LISTENING_IP = "gitblogger.listeningIp";
+    public static String CONFKEY_LISTENING_PORT = "gitblogger.listeningPort";
+    public static String CONFKEY_CANONICAL_URL = "gitblogger.canonicalUrl";
+
+    public static int DEFAULT_LISTENING_PORT = 4567;
+    public static String DEFAULT_LISTENING_IP = "0.0.0.0";
+
     public boolean isProductionMode();
 
     public Charset getDefaultSourceEncoding();
@@ -19,13 +27,13 @@ public interface BaseConfig {
     public Optional<String> getCanonicalUrl();
 
     public static BaseConfig getCurrentConfig() {
-        boolean isProductionMode = System.getProperty("gitblogger.production") != null;
-        String ip = System.getProperty("gitblogger.listeningIp", "0.0.0.0");
+        boolean isProductionMode = System.getProperty(CONFKEY_PRODUCTION) != null;
+        String ip = System.getProperty(CONFKEY_LISTENING_IP, DEFAULT_LISTENING_IP);
         Optional<Integer> port =
-                Optional.ofNullable(System.getProperty("gitblogger.listeningPort")).map(str -> Integer.parseInt(str));
-        Optional<String> canonicalUrl = Optional.ofNullable(System.getProperty("gitblogger.canonicalUrl"));
+                Optional.ofNullable(System.getProperty(CONFKEY_LISTENING_PORT)).map(str -> Integer.parseInt(str));
+        Optional<String> canonicalUrl = Optional.ofNullable(System.getProperty(CONFKEY_CANONICAL_URL));
     
-        return create(isProductionMode, StandardCharsets.UTF_8, StandardCharsets.UTF_8, ip, port.orElse(4567),
+        return create(isProductionMode, StandardCharsets.UTF_8, StandardCharsets.UTF_8, ip, port.orElse(DEFAULT_LISTENING_PORT),
                 canonicalUrl);
     }
 
