@@ -166,6 +166,11 @@ public class GitBlogger {
                     case "port": System.setProperty(BaseConfig.CONFKEY_LISTENING_PORT, arg); break;
                     case "url":  System.setProperty(BaseConfig.CONFKEY_CANONICAL_URL, arg); break;
                     case "repo": repo = arg; break;
+                    case "ref":  System.setProperty(FSGitRepoConfig.CONFKEY_EXPOSED_REF, arg); break;
+
+                    default:
+                        throw new RuntimeException("Hmm, it seems that I missed to implement this flag! "
+                                + currentConfigurable);
                 }
 
                 currentConfigurable = null;
