@@ -1,32 +1,7 @@
 package name.haochenxie.gitblogger;
 
-import static name.haochenxie.gitblogger.framework.util.UriUtils.canonizePath;
-import static name.haochenxie.gitblogger.framework.util.UriUtils.checkHead;
-import static name.haochenxie.gitblogger.framework.util.UriUtils.combine;
-import static name.haochenxie.gitblogger.framework.util.UriUtils.drop;
-import static name.haochenxie.gitblogger.framework.util.UriUtils.of;
-import static name.haochenxie.gitblogger.framework.util.UriUtils.dropHead;
-import static name.haochenxie.gitblogger.framework.util.UriUtils.stringify;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
-
-import com.google.common.collect.Sets;
-import org.apache.commons.io.IOUtils;
-import org.eclipse.jgit.dircache.DirCache;
-import org.eclipse.jgit.lib.Repository;
-
 import com.google.common.base.Joiner;
-
+import com.google.common.collect.Sets;
 import name.haochenxie.gitblogger.config.BaseConfig;
 import name.haochenxie.gitblogger.config.FSGitRepoConfig;
 import name.haochenxie.gitblogger.config.GitBloggerConfiguration;
@@ -41,6 +16,7 @@ import name.haochenxie.gitblogger.framework.dispatcher.NamespacedDispatcherBuild
 import name.haochenxie.gitblogger.framework.dispatcher.NamespacedDispatcherBuilder.ChainNamespacedDispatcherBuilder.ChainNamespacedDispacher;
 import name.haochenxie.gitblogger.framework.dispatcher.NamespacedDispatcherContext;
 import name.haochenxie.gitblogger.framework.dispatcher.ResourceDispatcher;
+import name.haochenxie.gitblogger.framework.mime.MimeUtils;
 import name.haochenxie.gitblogger.framework.renderer.ContentRendererRegisty;
 import name.haochenxie.gitblogger.framework.repo.FileSystemResourceRepository;
 import name.haochenxie.gitblogger.framework.repo.GitIndexResourceRepository;
@@ -50,7 +26,19 @@ import name.haochenxie.gitblogger.framework.util.GitUtils;
 import name.haochenxie.gitblogger.framework.util.SuperOptional;
 import name.haochenxie.gitblogger.mime.SimpleMimeParser;
 import name.haochenxie.gitblogger.renderer.MarkdownRenderer;
+import org.eclipse.jgit.dircache.DirCache;
+import org.eclipse.jgit.lib.Repository;
 import spark.Spark;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.util.*;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
+import static name.haochenxie.gitblogger.framework.util.UriUtils.*;
 
 @SuppressWarnings({"Convert2MethodRef", "UnnecessaryLocalVariable", "UnusedParameters"})
 public class GitBlogger {
@@ -86,27 +74,93 @@ public class GitBlogger {
 
         System.out.println("Spark Listening Path: " + sparkListenerPath);
 
-        Spark.get(sparkListenerPath, (req, resp) -> {
-            String spath = req.pathInfo();
-            String[] path = dropHead(canonizePath(spath), rootNamespace);
+        // Private Repo Browser prototype
+        {
+            FSGitRepoConfig rootRepoConfig = bloggerContext.getConfig().getRootRepoConfig();
+            Repository gitrepo = GitUtils.openGitRepository(rootRepoConfig);
+            String exposedRef = rootRepoConfig.getProductionExposedRef();
 
-            Object result = rootDispatcher.dispatch(path, req, resp, dispatcherContext);
+            ResourceRepository repo = GitRefResourceRepository.forRef(gitrepo, exposedRef);
 
-            // Spark somehow instead of piping the content of InputStream, would
-            // convert the InputStream to String with the JVM default encoding,
-            // then serve the string in UTF-8, which is troublesome for our use case
-            if (result instanceof InputStream) {
-                // this is a hack to the Spark framework for custom serialization logic
-                HttpServletResponse rresp = resp.raw();
-                InputStream is = (InputStream) result;
-                try (ServletOutputStream os = rresp.getOutputStream()) {
-                    rresp.setStatus(200);
-                    IOUtils.copy(is, os);
+            Spark.get("/*", (req, resp) -> {
+                String[] rpath = canonizePath(req.pathInfo());
+
+                if (repo.checkExistence(rpath)) {
+                    if (repo.checkIfTree(rpath)) {
+                        ResourceRepository.TreeListing treeListing = repo.createTreeListing(rpath);
+
+                        Collection<String> subtrees = treeListing.listChildrenTrees();
+                        Collection<String> resources = treeListing.listChidrenResources();
+
+                        List<String> children = Stream.concat(
+                                subtrees.stream()
+                                        .map(str -> str + "/"),
+                                resources.stream())
+                                .collect(toList());
+
+                        if (rpath.length > 0) {
+                            children = Stream.concat(
+                                    Stream.of("./", "../"),
+                                    children.stream()
+                            ).collect(toList());
+                        }
+
+                        List<String> listHtml = children.stream()
+                                .map(str -> String.format("<a href='%s'>%s</a>",
+                                        "./" + str, str))
+                                .collect(toList());
+
+                        return Joiner.on("<br/>\n").join(listHtml);
+                    } else if (repo.checkIfResource(rpath)) {
+                        String basename = ResourceRepository.Helper.getBasename(rpath);
+                        String mime = dispatcherContext.getMimeParser().parseMime(basename);
+
+                        String contentType = mime;
+
+                        // when serving 'text/*' mime types, it is advisable to specify the encoding.
+                        // ref: RFC6657
+                        // ref: http://www.iana.org/assignments/media-types/media-types.xhtml#text
+                        if (mime.startsWith("text")) {
+                            contentType = MimeUtils.constructContentType(mime,
+                                    bconfig.getDefaultSourceEncoding());
+                        }
+
+                        resp.type(contentType);
+                        BufferedInputStream input = new BufferedInputStream(repo.open(rpath));
+                        return input;
+                    } else {
+                        String msgUncategorizable = "wow, resource exists but category unrecognized??!";
+                        return msgUncategorizable;
+                    }
+                } else {
+                    String msg404 = "wow, 404!";
+                    return msg404;
                 }
-            }
+            });
 
-            return result;
-        });
+        }
+
+//        Spark.get(sparkListenerPath, (req, resp) -> {
+//            String spath = req.pathInfo();
+//            String[] path = dropHead(canonizePath(spath), rootNamespace);
+//
+//            Object result = rootDispatcher.dispatch(path, req, resp, dispatcherContext);
+//
+//            // Spark somehow instead of piping the content of InputStream, would
+//            // convert the InputStream to String with the JVM default encoding,
+//            // then serve the string in UTF-8, which is troublesome for our use case
+//            if (result instanceof InputStream) {
+//                // this is a hack to the Spark framework for custom serialization logic
+//                HttpServletResponse rresp = resp.raw();
+//                InputStream is = (InputStream) result;
+//                try (ServletOutputStream os = rresp.getOutputStream()) {
+//                    rresp.setStatus(200);
+//                    IOUtils.copy(is, os);
+//                }
+//            }
+//
+//            return result;
+//        });
 
     }
 
