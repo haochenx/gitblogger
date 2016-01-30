@@ -55,25 +55,7 @@ public class GitTreeResourceRepository implements ResourceRepository {
 
     @Override
     public boolean checkExistence(String[] rpath) throws IOException {
-        ensureUpdated();
-        try (TreeWalk walk = new TreeWalk(objectReader)) {
-            if (rpath.length == 0) {
-                return true;
-            }
-
-            walk.setRecursive(true);
-            walk.addTree(root);
-            String path = Joiner.on('/').join(rpath);
-            walk.setFilter(PathFilter.create(path));
-
-            while (walk.next()) {
-                if (Objects.equals(walk.getPathString(), path)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        return checkIfResource(rpath) || checkIfTree(rpath);
     }
 
     @Override
@@ -103,14 +85,18 @@ public class GitTreeResourceRepository implements ResourceRepository {
                 return true;
             }
 
-            walk.setRecursive(true);
+            walk.setRecursive(false);
             walk.addTree(root);
             String path = Joiner.on('/').join(rpath);
-            walk.setFilter(PathFilter.create(path));
+            if (!path.isEmpty()) {
+                walk.setFilter(PathFilter.create(path));
+            }
 
             while (walk.next()) {
                 if (Objects.equals(walk.getPathString(), path) &&  walk.isSubtree()) {
                     return true;
+                } else if (path.startsWith(walk.getPathString())) {
+                    walk.enterSubtree();
                 }
             }
 
@@ -155,7 +141,9 @@ public class GitTreeResourceRepository implements ResourceRepository {
                 try (TreeWalk walk = new TreeWalk(objectReader)) {
                     walk.setRecursive(false);
                     walk.addTree(root);
-                    walk.setFilter(PathFilter.create(path));
+                    if (!path.isEmpty()) {
+                        walk.setFilter(PathFilter.create(path));
+                    }
 
                     while (walk.next()) {
                         String cpath = walk.getPathString();
@@ -178,7 +166,9 @@ public class GitTreeResourceRepository implements ResourceRepository {
                 try (TreeWalk walk = new TreeWalk(objectReader)) {
                     walk.setRecursive(false);
                     walk.addTree(root);
-                    walk.setFilter(PathFilter.create(path));
+                    if (!path.isEmpty()) {
+                        walk.setFilter(PathFilter.create(path));
+                    }
 
                     while (walk.next()) {
                         String cpath = walk.getPathString();
