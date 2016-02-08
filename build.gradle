@@ -38,6 +38,10 @@ task lilacs(type:JavaExec) {
   classpath = sourceSets.main.runtimeClasspath
 }
 
+task printClasspath << {
+    println sourceSets.main.runtimeClasspath.asPath
+}
+
 generateGrammarSource {
   arguments += ["-visitor"]
 }

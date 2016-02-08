@@ -1,5 +1,6 @@
 package name.haochenxie.gitblogger.lilacs;
 
+import com.google.common.base.Suppliers;
 import name.haochenxie.gitblogger.lilacs.translator.LilacsJavascriptTranslator;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -9,6 +10,7 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.File;
 import java.util.Optional;
+import java.util.Scanner;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -87,6 +89,20 @@ public class LilacsRepl {
 
     }
 
+    private static com.google.common.base.Supplier<Scanner> scannerSupplier =
+            Suppliers.memoize(() -> new Scanner(System.in));
+
+    private static String readLine() {
+        System.out.flush();
+        System.err.flush();
+
+        if (System.console() != null) {
+            return System.console().readLine();
+        } else {
+            return scannerSupplier.get().nextLine();
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
         ScriptEngine engine = scriptEngineManager.getEngineByName("JavaScript");
@@ -113,9 +129,9 @@ public class LilacsRepl {
             StringBuilder buff = new StringBuilder();
             String line;
 
-            for (line = System.console().readLine();
+            for (line = readLine();
                  line != null && !line.trim().isEmpty();
-                 line = System.console().readLine()) {
+                 line = readLine()) {
                 buff.append(line);
                 buff.append('\n');
                 System.err.print(" : ");
