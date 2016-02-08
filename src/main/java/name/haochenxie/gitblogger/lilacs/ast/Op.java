@@ -3,11 +3,11 @@ package name.haochenxie.gitblogger.lilacs.ast;
 // TODO incomplete
 public enum Op {
 
-    PLUS("+"), MINUS("-"), ASTERISK("*"), SLASH("/"),
+    PLUS("+"), MINUS("-"), ASTERISK("*"), SLASH("/"), PERCENTAGE("%"),
     DAND("&&"), DOR("||"),
     LESS("<"), MORE(">"), ELESS("<="), EMORE(">="),
     BANG("!"),
-    EQ("eq?"), EQQ("eq??"), NEQ("neq?"), NEQQ("neq??"),
+    EQ("eq?", "=="), EQQ("eq??", "==="), NEQ("neq?", "!="), NEQQ("neq??", "!=="),
     LARROW("<-", "="),
 
     ;
