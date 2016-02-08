@@ -1,42 +1,18 @@
 package name.haochenxie.gitblogger.lilacs.translator;
 
-import static java.util.stream.Collectors.toList;
-
-import java.util.*;
-
+import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
+import name.haochenxie.gitblogger.lilacs.ast.*;
+import name.haochenxie.gitblogger.lilacs.parser.Visitors;
+import name.haochenxie.gitblogger.lilacs.syntax.LilacsLexer;
+import name.haochenxie.gitblogger.lilacs.syntax.LilacsParser;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.commons.io.IOUtils;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
+import java.util.*;
 
-import name.haochenxie.gitblogger.lilacs.ast.ASTVisitor;
-import name.haochenxie.gitblogger.lilacs.ast.ArrCons;
-import name.haochenxie.gitblogger.lilacs.ast.Constant;
-import name.haochenxie.gitblogger.lilacs.ast.Exp;
-import name.haochenxie.gitblogger.lilacs.ast.Id;
-import name.haochenxie.gitblogger.lilacs.ast.InvkSexpFunc;
-import name.haochenxie.gitblogger.lilacs.ast.InvkSexpOp;
-import name.haochenxie.gitblogger.lilacs.ast.IoExp;
-import name.haochenxie.gitblogger.lilacs.ast.LambdaSexp;
-import name.haochenxie.gitblogger.lilacs.ast.Literal;
-import name.haochenxie.gitblogger.lilacs.ast.ObjCons;
-import name.haochenxie.gitblogger.lilacs.ast.RawString;
-import name.haochenxie.gitblogger.lilacs.ast.SfAat;
-import name.haochenxie.gitblogger.lilacs.ast.SfExact;
-import name.haochenxie.gitblogger.lilacs.ast.SfIf;
-import name.haochenxie.gitblogger.lilacs.ast.SfNew;
-import name.haochenxie.gitblogger.lilacs.ast.SugarBegin;
-import name.haochenxie.gitblogger.lilacs.ast.SugarFor;
-import name.haochenxie.gitblogger.lilacs.ast.SugarForin;
-import name.haochenxie.gitblogger.lilacs.ast.SugarLet;
-import name.haochenxie.gitblogger.lilacs.ast.SugarShat;
-import name.haochenxie.gitblogger.lilacs.parser.ParsingError;
-import name.haochenxie.gitblogger.lilacs.parser.Visitors;
-import name.haochenxie.gitblogger.lilacs.syntax.LilacsLexer;
-import name.haochenxie.gitblogger.lilacs.syntax.LilacsParser;
-import name.haochenxie.gitblogger.lilacs.syntax.LilacsParser.ExpContext;
+import static java.util.stream.Collectors.toList;
 
 public class LilacsJavascriptTranslator {
 
@@ -85,6 +61,14 @@ public class LilacsJavascriptTranslator {
         @Override
         public String visitInvkSexpOp(InvkSexpOp invkSexpOp) {
             List<String> operants = invkSexpOp.args().stream().map(e -> e.accept(this)).collect(toList());
+            Op.AttributeType opNature = invkSexpOp.op().nature;
+            if (operants.size() == 1 && !opNature.unary) {
+                throw new IllegalArgumentException(invkSexpOp.op().lit + " is not a unary operator");
+            } else if (operants.size() == 2 && !opNature.binary) {
+                throw new IllegalArgumentException(invkSexpOp.op().lit + " is not a binary operator");
+            } else if (operants.size() > 2 && !opNature.associative) {
+                throw new IllegalArgumentException(invkSexpOp.op().lit + " cannot be used this way");
+            }
             switch (operants.size()) {
             case 1:
                 return String.format("%s%s", invkSexpOp.op().js, operants.get(0));
