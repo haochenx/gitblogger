@@ -149,7 +149,7 @@ public class Visitors {
 
         public SfNew visitSf_new(name.haochenxie.gitblogger.lilacs.syntax.LilacsParser.Sf_newContext ctx) {
             Exp cons = ctx.cons.accept(this);
-            Deque<Exp> args = ctx.exps().accept(expsVisitor);
+            Collection<Exp> args = ctx.exps() != null ? ctx.exps().accept(expsVisitor) : Collections.emptyList();
             return SfNew.of(cons, args);
         }
 
