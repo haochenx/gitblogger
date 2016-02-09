@@ -124,7 +124,7 @@ public class LilacsJavascriptTranslator {
         @Override
         public String visitSfNew(SfNew sfNew) {
             List<String> args = sfNew.args().stream().map(e -> e.accept(this)).collect(toList());
-            return String.format("new %s(%s)", sfNew.cons().accept(this),
+            return String.format("new (%s)(%s)", sfNew.cons().accept(this),
                     Joiner.on(',').join(args));
         }
 
